@@ -1,0 +1,20 @@
+{
+  "env": {
+    "browser": true,
+    "es6": true,
+    "jest": true,
+    "node": true
+  },
+  "extends": "eslint:recommended",
+  "root": true,
+  "parser": "babel-eslint",
+  "rules": {
+    "comma-dangle": ["warn", "always-multiline"],
+    "indent": ["warn", "tab"],
+    "no-console": "off",
+    "quotes": ["warn", "single"],
+    "space-unary-ops": ["warn", { "overrides": { "!": true } }],
+    "no-useless-computed-key": "error",
+    "no-useless-concat": "error"
+  }
+}
