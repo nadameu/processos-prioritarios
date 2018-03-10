@@ -3,10 +3,7 @@ import { apenasData } from './helpers';
 
 function excluirCanvasAntigo() {
 	const canvases = Array.from(document.getElementsByTagName('canvas'));
-	if (canvases.length > 0) {
-		console.log('Excluindo canvas antigo');
 	canvases.forEach(canvas => canvas.parentNode.removeChild(canvas));
-}
 }
 
 function extrairProcessos(localizadores) {
