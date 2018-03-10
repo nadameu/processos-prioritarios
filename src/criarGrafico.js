@@ -1,26 +1,22 @@
 import Grafico from './Grafico';
+import { apenasData } from './helpers';
 
 function excluirCanvasAntigo() {
 	const canvases = Array.from(document.getElementsByTagName('canvas'));
 	if (canvases.length > 0) {
 		console.log('Excluindo canvas antigo');
-		canvases.forEach(canvas => canvas.parentNode.removeChild(canvas));
-	}
+	canvases.forEach(canvas => canvas.parentNode.removeChild(canvas));
+}
 }
 
 function extrairProcessos(localizadores) {
 	const processos = new Map();
-	const agora = new Date();
-	const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+	const hoje = apenasData(Date.now());
 	localizadores.forEach(localizador => {
 		localizador.processos.forEach(processo => {
 			const numproc = processo.numproc;
 			const termo = processo.termoPrazoCorregedoria,
-				dataTermo = new Date(
-					termo.getFullYear(),
-					termo.getMonth(),
-					termo.getDate()
-				);
+				dataTermo = apenasData(termo);
 			const timestamp = Math.max(hoje.getTime(), dataTermo.getTime());
 			if (processos.has(numproc)) {
 				const timestampAntigo = processos.get(numproc),

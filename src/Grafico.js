@@ -1,3 +1,5 @@
+import { apenasData } from './helpers';
+
 export default class Grafico {
 	get area() {
 		var area = {
@@ -157,8 +159,7 @@ export default class Grafico {
 			(larguraPossivelTexto + this.dimensoes.espacamento) /
 				this.categorias.distancia
 		);
-		const agora = new Date(),
-			hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+		const hoje = apenasData(Date.now());
 		context.fillStyle = this.texto.cor;
 		const y =
 			this.dimensoes.altura -
@@ -176,8 +177,7 @@ export default class Grafico {
 	}
 	desenharBarras() {
 		const context = this.context;
-		const agora = new Date(),
-			hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+		const hoje = apenasData(Date.now());
 		const larguraBarra =
 			this.categorias.distancia * (1 - this.barras.espacamento);
 		for (let i = 0; i < this.categorias.quantidade; i++) {
@@ -236,8 +236,7 @@ export default class Grafico {
 	}
 	calcularCategorias() {
 		const dias = Array.from(this.dados.keys());
-		const agora = new Date(),
-			hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+		const hoje = apenasData(Date.now());
 		const minimo = hoje.getTime();
 		const maximo = Math.max.apply(null, dias);
 		const UM_DIA = 864e5;

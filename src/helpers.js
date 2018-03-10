@@ -24,6 +24,15 @@ export function adicionarBotaoComVinculo(localizadores) {
 	);
 }
 
+/**
+ * @param {Date|number} dataOuMilissegundos
+ * @returns {Date}
+ */
+export function apenasData(dataOuMilissegundos) {
+	const data = new Date(dataOuMilissegundos);
+	return new Date(data.getFullYear(), data.getMonth(), data.getDate());
+}
+
 export function definirPropriedades(target, ...sources) {
 	sources.forEach(source => {
 		Object.defineProperties(
