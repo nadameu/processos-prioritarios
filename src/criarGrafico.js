@@ -10,28 +10,25 @@ function extrairProcessos(localizadores) {
 	const processos = new Map();
 	const hoje = apenasData(Date.now());
 	localizadores.forEach(localizador => {
-		localizador.processos.forEach(processo => {
-			const numproc = processo.numproc;
-			const termo = processo.termoPrazoCorregedoria,
-				dataTermo = apenasData(termo);
-			const timestamp = Math.max(hoje.getTime(), dataTermo.getTime());
-			if (processos.has(numproc)) {
-				const timestampAntigo = processos.get(numproc),
-					timestampNovo = Math.min(timestampAntigo, timestamp);
-				processos.set(numproc, timestampNovo);
-			} else {
+		localizador.processos.forEach(
+			({ numproc, termoPrazoCorregedoria: termo }) => {
+				const dataTermo = apenasData(termo);
+				const timestamp = Math.min(
+					Math.max(hoje.getTime(), dataTermo.getTime()),
+					processos.get(numproc) || Infinity
+				);
 				processos.set(numproc, timestamp);
 			}
-		});
+		);
 	});
 	return processos;
 }
 
 function extrairDatas(processos) {
 	const datas = new Map();
-	for (const timestamp of processos.values()) {
-		const valorAtual = datas.get(timestamp) || 0;
-		datas.set(timestamp, valorAtual + 1);
+	for (const data of processos.values()) {
+		const valorAtual = datas.get(data) || 0;
+		datas.set(data, valorAtual + 1);
 	}
 	return datas;
 }
