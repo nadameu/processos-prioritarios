@@ -33,7 +33,7 @@ var RegrasCorregedoria = {
 };
 
 // TODO Somente para SCLAG02
-RegrasCorregedoria[CompetenciasCorregedoria.JUIZADO][Situacoes.MOVIMENTO] = 30;
-RegrasCorregedoria[CompetenciasCorregedoria.JUIZADO][Situacoes.INDEFINIDA] = 60;
+// RegrasCorregedoria[CompetenciasCorregedoria.JUIZADO][Situacoes.MOVIMENTO] = 30;
+// RegrasCorregedoria[CompetenciasCorregedoria.JUIZADO][Situacoes.INDEFINIDA] = 60;
 
 export default RegrasCorregedoria;
