@@ -9,12 +9,14 @@
   "root": true,
   "parser": "babel-eslint",
   "rules": {
+    "arrow-body-style": "error",
     "comma-dangle": ["warn", "always-multiline"],
     "indent": ["warn", "tab"],
     "no-console": "off",
-    "quotes": ["warn", "single"],
-    "space-unary-ops": ["warn", { "overrides": { "!": true } }],
     "no-useless-computed-key": "error",
-    "no-useless-concat": "error"
+    "no-useless-concat": "error",
+    "prefer-arrow-callback": "error",
+    "quotes": ["warn", "single"],
+    "space-unary-ops": ["warn", { "overrides": { "!": true } }]
   }
 }
