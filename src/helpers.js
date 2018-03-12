@@ -5,15 +5,15 @@ export function adicionarBotaoComVinculo(localizadores) {
 	var botao = gui.criarBotaoAcao(localizadores);
 	botao.addEventListener(
 		'click',
-		function() {
+		() => {
 			gui.avisoCarregando.atualizar(
 				0,
 				localizadores.quantidadeProcessosNaoFiltrados
 			);
-			localizadores.obterProcessos().then(function() {
+			localizadores.obterProcessos().then(() => {
 				gui.avisoCarregando.ocultar();
 				gui.atualizarBotaoAcao();
-				localizadores.forEach(function(localizador) {
+				localizadores.forEach(localizador => {
 					gui.atualizarVisualizacao(localizador);
 				});
 				gui.criarGrafico(localizadores);

@@ -6,11 +6,12 @@ let saida = {};
 beforeEach(() => {
 	window.infraExibirAviso = jest.fn();
 	window.infraOcultarAviso = jest.fn();
-	document.getElementById = jest.fn(selector => {
-		return selector === 'gmProgresso'
-			? progresso
-			: selector === 'gmSaida' ? saida : null;
-	});
+	document.getElementById = jest.fn(
+		selector =>
+			selector === 'gmProgresso'
+				? progresso
+				: selector === 'gmSaida' ? saida : null
+	);
 });
 
 afterEach(() => {

@@ -72,11 +72,18 @@ export default class GUI {
 			),
 			localizador.processos.filter(processo => processo.atraso < atrasoAVencer),
 		];
-		var baloes = prioridades.map(function(processos, indicePrioridade) {
-			return `<span id="gmLocalizador${
-				localizador.id
-			}Prioridade${indicePrioridade}" class="gmProcessos gmPrioridade${indicePrioridade}${processos.length > 0 ? '' : ' gmVazio'}" onmouseover="infraTooltipMostrar(&quot;${avisos[indicePrioridade]}&quot;);" onmouseout="infraTooltipOcultar();">${processos.length}</span>`;
-		});
+		var baloes = prioridades.map(
+			(processos, indicePrioridade) =>
+				`<span id="gmLocalizador${
+					localizador.id
+				}Prioridade${indicePrioridade}" class="gmProcessos gmPrioridade${indicePrioridade}${
+					processos.length > 0 ? '' : ' gmVazio'
+				}" onmouseover="infraTooltipMostrar(&quot;${
+					avisos[indicePrioridade]
+				}&quot;);" onmouseout="infraTooltipOcultar();">${
+					processos.length
+				}</span>`
+		);
 		var conteudo = [];
 		if (! (localizador.sigla || localizador.nome)) {
 			conteudo.push(localizador.siglaNome);
@@ -141,12 +148,12 @@ export default class GUI {
 				filtrar.textContent = 'Filtrar';
 				filtrar.addEventListener(
 					'click',
-					function(evt) {
+					evt => {
 						evt.preventDefault();
 						evt.stopPropagation();
 						Array.from(
 							document.getElementsByClassName('gmDetalhesAberto')
-						).forEach(function(balaoAberto) {
+						).forEach(balaoAberto => {
 							let linhaAberta = balaoAberto.parentElement;
 							while (linhaAberta && linhaAberta.tagName.toLowerCase() !== 'tr')
 								linhaAberta = linhaAberta.parentElement;
@@ -154,7 +161,7 @@ export default class GUI {
 								balaoAberto.classList.remove('gmDetalhesAberto');
 								Array.from(
 									document.getElementsByClassName('gmDetalhes')
-								).forEach(function(linhaAntiga) {
+								).forEach(linhaAntiga => {
 									linha.parentElement.removeChild(linhaAntiga);
 								});
 							}
@@ -164,7 +171,7 @@ export default class GUI {
 							'Filtrando processos com prazo em aberto...'
 						);
 						gui.avisoCarregando.atualizar(0, localizador.quantidadeProcessos);
-						localizador.excluirPrazosAbertos().then(function() {
+						localizador.excluirPrazosAbertos().then(() => {
 							gui.avisoCarregando.ocultar();
 							gui.atualizarVisualizacao(localizador, true);
 							gui.atualizarGrafico();
@@ -179,19 +186,19 @@ export default class GUI {
 			atualizar.textContent = 'Atualizar';
 			atualizar.addEventListener(
 				'click',
-				function(evt) {
+				evt => {
 					evt.preventDefault();
 					evt.stopPropagation();
 					Array.from(
 						document.getElementsByClassName('gmDetalhesAberto')
-					).forEach(function(balaoAberto) {
+					).forEach(balaoAberto => {
 						let linhaAberta = balaoAberto.parentElement;
 						while (linhaAberta && linhaAberta.tagName.toLowerCase() !== 'tr')
 							linhaAberta = linhaAberta.parentElement;
 						if (linhaAberta && linhaAberta === linha) {
 							balaoAberto.classList.remove('gmDetalhesAberto');
 							Array.from(document.getElementsByClassName('gmDetalhes')).forEach(
-								function(linhaAntiga) {
+								linhaAntiga => {
 									linha.parentElement.removeChild(linhaAntiga);
 								}
 							);
@@ -203,7 +210,7 @@ export default class GUI {
 						0,
 						localizador.quantidadeProcessosNaoFiltrados
 					);
-					localizador.obterProcessos().then(function() {
+					localizador.obterProcessos().then(() => {
 						gui.avisoCarregando.ocultar();
 						gui.atualizarVisualizacao(localizador);
 						gui.atualizarGrafico();
@@ -217,7 +224,7 @@ export default class GUI {
 		}
 		function alternarDetalhes(balao, processos, indicePrioridade) {
 			Array.from(document.getElementsByClassName('gmDetalhes')).forEach(
-				function(linhaAntiga) {
+				linhaAntiga => {
 					linha.parentElement.removeChild(linhaAntiga);
 				}
 			);
@@ -226,7 +233,7 @@ export default class GUI {
 				return;
 			}
 			Array.from(document.getElementsByClassName('gmDetalhesAberto')).forEach(
-				function(balaoAberto) {
+				balaoAberto => {
 					balaoAberto.classList.remove('gmDetalhesAberto');
 				}
 			);
@@ -238,7 +245,7 @@ export default class GUI {
 				if (a.termoPrazoCorregedoria > b.termoPrazoCorregedoria) return MAIOR;
 				return 0;
 			});
-			processos.forEach(function(processo, indiceProcesso) {
+			processos.forEach((processo, indiceProcesso) => {
 				var linhaNova = linha.parentElement.insertRow(
 					linha.rowIndex + 1 + indiceProcesso
 				);
@@ -355,13 +362,13 @@ export default class GUI {
 				].join('');
 			});
 		}
-		prioridades.forEach(function(processos, indicePrioridade) {
+		prioridades.forEach((processos, indicePrioridade) => {
 			var balao = document.getElementById(
 				`gmLocalizador${localizador.id}Prioridade${indicePrioridade}`
 			);
 			balao.addEventListener(
 				'click',
-				function(evt) {
+				evt => {
 					evt.preventDefault();
 					evt.stopPropagation();
 					alternarDetalhes(balao, processos, indicePrioridade);
@@ -374,7 +381,7 @@ export default class GUI {
 		);
 		balaoPeticoes.addEventListener(
 			'click',
-			function(evt) {
+			evt => {
 				evt.preventDefault();
 				evt.stopPropagation();
 				alternarDetalhes(balaoPeticoes, processosComPeticao);
