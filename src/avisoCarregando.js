@@ -6,8 +6,8 @@ export default {
 		if (! progresso || ! saida) {
 			throw new Error('Aviso ainda não foi exibido.');
 		}
-		var atual = progresso.value,
-			total = progresso.max;
+		var atual = parseInt(progresso.value),
+			total = parseInt(progresso.max);
 		this.atualizar(atual + qtd, total);
 	},
 	atualizar(atual, total) {
