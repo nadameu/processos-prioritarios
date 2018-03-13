@@ -1,13 +1,7 @@
 {
-  "plugins": [["transform-object-rest-spread", { "useBuiltIns": true }]],
-  "presets": [
-    [
-      "env",
-      {
-        "targets": {
-          "browsers": ["last 2 Chrome versions", "firefox >= 38"]
-        }
-      }
-    ]
-  ]
+  "plugins": [
+    "transform-runtime",
+    ["transform-object-rest-spread", { "useBuiltIns": true }]
+  ],
+  "presets": ["env"]
 }
