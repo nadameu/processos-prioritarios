@@ -62,7 +62,9 @@ export default class Grafico {
 			corProximosDias: 'hsla(60, 100%, 75%, 1)',
 			corNoPrazo: 'hsla(120, 75%, 80%, 1)',
 			espacamento: 0.2,
-			/* valor entre 0 e 1, proporcional à largura disponível */ get largura() {
+
+			/* valor entre 0 e 1, proporcional à largura disponível */
+			get largura() {
 				return self.categorias.distancia * (1 - self.barras.espacamento);
 			},
 		};
