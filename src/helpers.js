@@ -79,3 +79,10 @@ export function parsePares(pares) {
 		return obj;
 	}, {});
 }
+
+export function safeQuery(selector) {
+	return Promise.resolve(
+		document.querySelector(selector) ||
+			Promise.reject(`Elemento não encontrado: "${selector}"!`)
+	);
+}
