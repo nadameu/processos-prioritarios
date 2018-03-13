@@ -183,7 +183,7 @@ export default class Grafico {
 		context.fillRect(0, 0, this.dimensoes.largura(), this.dimensoes.altura);
 		context.beginPath();
 		let x = this.dimensoes.margem;
-		let y = x;
+		let y = this.dimensoes.margem;
 		let w = this.dimensoes.largura() - 2 * this.dimensoes.margem;
 		let h = this.dimensoes.altura - 2 * this.dimensoes.margem;
 		context.rect(x, y, w, h);
@@ -258,12 +258,12 @@ export default class Grafico {
 				this.area().margens.b) /
 				2;
 		for (let i = 0; i < this.categorias.quantidade; i += step) {
-			let dia = new Date(
+			const dia = new Date(
 				hoje.getFullYear(),
 				hoje.getMonth(),
 				hoje.getDate() + i
 			);
-			let x = this.area().margens.l + (i + 0.5) * this.categorias.distancia();
+			const x = this.area().margens.l + (i + 0.5) * this.categorias.distancia();
 			context.fillText(dia.getDate().toString(), x, y);
 		}
 	}
@@ -298,8 +298,7 @@ export default class Grafico {
 		}
 	}
 	calcularEscala() {
-		const quantidades = Array.from(this.dados.values());
-		const maximo = Math.max.apply(null, quantidades);
+		const maximo = Math.max(...this.dados.values());
 		this.calcularDadosEscala(maximo);
 		const distanciaMinima =
 			2 * this.dimensoes.espacamento + 2 * this.texto.altura;
@@ -327,10 +326,9 @@ export default class Grafico {
 		this.escala.largura = largura;
 	}
 	calcularCategorias() {
-		const dias = Array.from(this.dados.keys());
-		const hoje = apenasData(Date.now());
-		const minimo = hoje.getTime();
-		const maximo = Math.max.apply(null, dias);
+		const minimo = apenasData(Date.now()).getTime();
+		const dias = [minimo].concat(Array.from(this.dados.keys()));
+		const maximo = Math.max(...dias);
 		const UM_DIA = 864e5;
 		this.categorias.quantidade = (maximo - minimo) / UM_DIA + 1;
 	}
