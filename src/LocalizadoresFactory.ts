@@ -2,6 +2,7 @@ import { GUI } from './GUI';
 import { queryAll } from './Query/queryAll';
 import { isContained } from './Util/isContained';
 import { parseCookies } from './Util/parseCookies';
+import { Maybe } from './Maybe';
 
 function trataHTML({ target: { response: doc } }) {
 	var pagina = Number(doc.getElementById('hdnInfraPaginaAtual').value);
@@ -185,7 +186,7 @@ export class Localizador {
 export class LocalizadorFactory {
 	static fromLinha(linha: HTMLTableRowElement) {
 		const separador = ' - ';
-		const siglaNome = Maybe.fromNullable(linha.cells[0])
+		const siglaNome = Maybe.fromNullable<HTMLTableCellElement>(linha.cells[0])
 			.mapFalsy(c => c.textContent)
 			.map(t => t.split(separador));
 		siglaNome.forEach((_, i) => {

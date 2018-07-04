@@ -1,4 +1,5 @@
 import { GUI } from './GUI';
+
 export default function adicionarBotaoComVinculo(localizadores) {
 	var gui = GUI.getInstance();
 	var botao = gui.criarBotaoAcao(localizadores);
