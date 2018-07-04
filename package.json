@@ -1,58 +1,56 @@
 {
-  "name": "processos-prioritarios",
-  "version": "26.0.0",
-  "description": "Processos prioritários",
-  "main": "src/index.js",
-  "userscript": {
-    "namespace": "http://nadameu.com.br/",
-    "include": [
-      "/^https:\\/\\/eproc\\.(jf(pr|rs|sc)|trf4)\\.jus\\.br\\/eproc(V2|2trf4)\\/controlador\\.php\\?acao=usuario_tipo_monitoramento_localizador_listar&/",
-      "/^https:\\/\\/eproc\\.(jf(pr|rs|sc)|trf4)\\.jus\\.br\\/eproc(V2|2trf4)\\/controlador\\.php\\?acao=localizador_processos_lista&/",
-      "/^https:\\/\\/eproc\\.(jf(pr|rs|sc)|trf4)\\.jus\\.br\\/eproc(V2|2trf4)\\/controlador\\.php\\?acao=localizador_orgao_listar&/",
-      "/^https:\\/\\/eproc\\.(jf(pr|rs|sc)|trf4)\\.jus\\.br\\/eproc(V2|2trf4)\\/controlador\\.php\\?acao=relatorio_geral_listar&/",
-      "/^https:\\/\\/eproc\\.(jf(pr|rs|sc)|trf4)\\.jus\\.br\\/eproc(V2|2trf4)\\/controlador\\.php\\?acao=[^&]+&acao_origem=principal&/"
-    ],
-    "grant": "none"
-  },
-  "scripts": {
-    "build": "webpack --env.production --mode production",
-    "build:dev": "webpack --env.development --mode development",
-    "serve": "webpack-dev-server --env.development --mode development --open",
-    "start": "npm run build:dev && npm run serve",
-    "test": "jest"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nadameu/processos-prioritarios.git"
-  },
-  "author": "nadameu",
-  "license": "GPL-3.0",
-  "bugs": {
-    "url": "https://github.com/nadameu/processos-prioritarios/issues"
-  },
-  "browserlist": [
-    "last 2 Chrome versions",
-    "Firefox 38"
-  ],
-  "homepage": "https://github.com/nadameu/processos-prioritarios#readme",
-  "devDependencies": {
-    "babel-core": "^6.26.0",
-    "babel-eslint": "^8.2.2",
-    "babel-loader": "^7.1.4",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-preset-env": "^1.6.1",
-    "clean-webpack-plugin": "^0.1.19",
-    "css-loader": "^0.28.10",
-    "jest": "^22.4.2",
-    "node-sass": "^4.7.2",
-    "prettier-eslint": "^8.8.1",
-    "sass-loader": "^6.0.7",
-    "style-loader": "^0.20.3",
-    "uglifyjs-webpack-plugin": "^1.2.2",
-    "userscript-meta": "^1.0.1",
-    "webpack": "^4.1.1",
-    "webpack-cli": "^2.0.10",
-    "webpack-dev-server": "^3.1.0"
-  }
+	"name": "processos-prioritarios",
+	"version": "26.0.0",
+	"main": "src/index.ts",
+	"scripts": {
+		"build": "webpack --env.production --mode production",
+		"build:dev": "webpack --env.development --mode development",
+		"serve": "webpack-dev-server --env.development --mode development --open",
+		"start": "yarn run build:dev && yarn run serve",
+		"test": "jest",
+		"type-check": "tsc"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/nadameu/processos-prioritarios.git"
+	},
+	"author": "nadameu",
+	"license": "GPL-3.0",
+	"bugs": {
+		"url": "https://github.com/nadameu/processos-prioritarios/issues"
+	},
+	"homepage": "https://github.com/nadameu/processos-prioritarios#readme",
+	"devDependencies": {
+		"@babel/cli": "^7.0.0-beta.42",
+		"@babel/core": "^7.0.0-beta.42",
+		"@babel/plugin-proposal-class-properties": "^7.0.0-beta.42",
+		"@babel/preset-env": "^7.0.0-beta.42",
+		"@types/clean-webpack-plugin": "^0.1.2",
+		"@types/greasemonkey": "0.0.28",
+		"@types/intl": "^1.2.0",
+		"@types/jest": "^22.2.2",
+		"@types/node": "^9.6.0",
+		"@types/uglifyjs-webpack-plugin": "^1.1.0",
+		"@types/webpack": "^4.1.2",
+		"babel-loader": "^8.0.0-beta.2",
+		"clean-webpack-plugin": "^0.1.19",
+		"css-loader": "^0.28.11",
+		"detect-node": "^2.0.3",
+		"jest": "^22.4.3",
+		"node-sass": "^4.8.3",
+		"raw-loader": "^0.5.1",
+		"sass-loader": "^6.0.7",
+		"style-loader": "^0.20.3",
+		"ts-jest": "^22.4.2",
+		"ts-loader": "^4.4.1",
+		"ts-node": "^5.0.1",
+		"typescript": "^2.8.1",
+		"userscript-meta": "^1.0.1",
+		"webpack": "^4.3.0",
+		"webpack-cli": "^2.0.13",
+		"webpack-dev-server": "^3.1.1"
+	},
+	"dependencies": {
+		"intl": "^1.2.5"
+	}
 }

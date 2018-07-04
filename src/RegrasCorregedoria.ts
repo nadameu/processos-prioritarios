@@ -1,6 +1,3 @@
-import CompetenciasCorregedoria from './CompetenciasCorregedoria';
-import Situacoes from './Situacoes';
-
 var RegrasCorregedoria = {
 	[CompetenciasCorregedoria.JUIZADO]: {
 		[Situacoes['INICIAL']]: 10,
@@ -31,9 +28,5 @@ var RegrasCorregedoria = {
 		[Situacoes['INDEFINIDA']]: 120,
 	},
 };
-
-// TODO Somente para SCLAG02
-// RegrasCorregedoria[CompetenciasCorregedoria.JUIZADO][Situacoes.MOVIMENTO] = 30;
-// RegrasCorregedoria[CompetenciasCorregedoria.JUIZADO][Situacoes.INDEFINIDA] = 60;
 
 export default RegrasCorregedoria;
