@@ -5,22 +5,30 @@ import UserscriptMeta from 'userscript-meta';
 import webpack from 'webpack';
 
 import pkg from './package.json';
+import metadata from './metadata';
 import GenerateMetaFilePlugin from './lib/GenerateMetaFilePlugin';
 
 const getMetadata = () => {
-	const { name, description, version, author, userscript } = pkg;
-	return { name, description, version, author, ...userscript };
+	const { name, description, version, author } = pkg;
+	return Object.assign({ name, description, version, author }, metadata);
 };
 
-const defaultConfig = {
+const defaultConfig: webpack.Configuration = {
 	entry: path.resolve(__dirname, pkg.main),
 	module: {
 		rules: [
-			{ test: /\.js$/, exclude: /node_modules/, loader: 'babel-loader' },
 			{
-				test: /\.scss$/,
+				test: /\.(tsx?)|(js)$/,
 				exclude: /node_modules/,
-				loader: ['style-loader', 'css-loader', 'sass-loader'],
+				loader: 'babel-loader',
+			},
+			{
+				test: /\.s?css$/,
+				use: ['style-loader', 'css-loader', 'sass-loader'],
+			},
+			{
+				test: /\.html$/,
+				use: ['raw-loader'],
 			},
 		],
 	},
@@ -39,17 +47,16 @@ const defaultConfig = {
 			entryOnly: true,
 		}),
 	],
+	resolve: { extensions: ['.ts', '.js', '.json'] },
 };
 
-const devConfig = {
-	...defaultConfig,
+const devConfig: webpack.Configuration = Object.assign({}, defaultConfig, {
 	devServer: {
 		contentBase: './dist',
 	},
-};
+});
 
-const prodConfig = {
-	...defaultConfig,
+const prodConfig: webpack.Configuration = Object.assign({}, defaultConfig, {
 	plugins: [
 		new CleanWebpackPlugin(['dist']),
 		new UglifyJsPlugin({}),
@@ -59,8 +66,12 @@ const prodConfig = {
 			metadata: getMetadata(),
 		}),
 	],
-};
+});
 
-const config = (env = {}) => (env.production ? prodConfig : devConfig);
+interface Env {
+	development?: boolean;
+	production?: boolean;
+}
+const config = (env: Env = {}) => (env.production ? prodConfig : devConfig);
 
 export default config;
