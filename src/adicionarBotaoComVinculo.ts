@@ -1,6 +1,10 @@
+import { Either, Right } from '../adt/Either';
 import { GUI } from './GUI';
+import { Localizadores } from './LocalizadoresFactory';
 
-export default function adicionarBotaoComVinculo(localizadores) {
+export default function adicionarBotaoComVinculo(
+	localizadores: Localizadores
+): Either<Error, string> {
 	var gui = GUI.getInstance();
 	var botao = gui.criarBotaoAcao(localizadores);
 	botao.addEventListener(
@@ -22,4 +26,5 @@ export default function adicionarBotaoComVinculo(localizadores) {
 		},
 		false
 	);
+	return Right('Ok.');
 }

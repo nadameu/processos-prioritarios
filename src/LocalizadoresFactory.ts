@@ -266,6 +266,9 @@ export class Localizadores {
 		);
 	}
 
+	forEach(f: (_: Localizador) => void): void {
+		this.localizadores.forEach(f);
+	}
 	obterProcessos() {
 		return paraCadaLocalizador.call(this, localizador =>
 			localizador.obterProcessos()
@@ -284,12 +287,12 @@ export class LocalizadoresFactory {
 	}
 
 	static fromTabelaPainel(tabela: HTMLTableElement) {
-		var localizadores = new Localizadores();
-		localizadores.tabela = tabela;
-		var linhas = [...tabela.querySelectorAll('tr[class^="infraTr"]')];
-		linhas.forEach(function(linha) {
-			localizadores.push(LocalizadorFactory.fromLinhaPainel(linha));
-		});
-		return localizadores;
+		return new Localizadores(
+			tabela,
+			Array.from(
+				tabela.querySelectorAll<HTMLTableRowElement>('tr[class^="infraTr"]'),
+				LocalizadorFactory.fromLinhaPainel
+			)
+		);
 	}
 }

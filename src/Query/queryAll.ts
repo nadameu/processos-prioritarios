@@ -1,4 +1,6 @@
+import { Iter } from '../../adt/Iter';
+
 export const queryAll = <T extends Element>(
 	selector: string,
 	context: NodeSelector
-): T[] => Array.from(context.querySelectorAll<T>(selector));
+): Iter<T> => Iter.from(context.querySelectorAll<T>(selector));

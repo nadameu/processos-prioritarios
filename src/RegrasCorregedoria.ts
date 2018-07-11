@@ -1,4 +1,7 @@
-var RegrasCorregedoria = {
+import { CompetenciasCorregedoria } from './CompetenciasCorregedoria';
+import { Situacoes } from './Situacoes';
+
+export const RegrasCorregedoria = {
 	[CompetenciasCorregedoria.JUIZADO]: {
 		[Situacoes['INICIAL']]: 10,
 		[Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 15,
@@ -28,5 +31,3 @@ var RegrasCorregedoria = {
 		[Situacoes['INDEFINIDA']]: 120,
 	},
 };
-
-export default RegrasCorregedoria;

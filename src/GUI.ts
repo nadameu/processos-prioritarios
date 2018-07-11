@@ -1,4 +1,5 @@
 import './includes/estilos.scss';
+import { Localizador } from './LocalizadoresFactory';
 
 let construindo = false;
 let button: HTMLButtonElement;
@@ -23,6 +24,7 @@ function safeHTML(strings: string[], ...vars: string[]) {
 }
 
 export class GUI {
+	atualizarGrafico: () => void = () => {};
 	constructor() {
 		if (!construindo) {
 			throw new Error(
@@ -30,7 +32,7 @@ export class GUI {
 			);
 		}
 	}
-	atualizarVisualizacao(localizador, filtrado = false) {
+	atualizarVisualizacao(localizador: Localizador, filtrado = false) {
 		var linha = localizador.linha;
 		const DIAS_A_FRENTE = 3;
 		var avisos = [

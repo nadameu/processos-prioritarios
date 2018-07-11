@@ -1,4 +1,6 @@
-import { Either, Left, Right } from '../Either';
+import { Either } from '../../adt/Either';
+const { Left, Right } = Either;
+
 export const queryOne = <T extends Element>(
 	selector: string,
 	context: NodeSelector

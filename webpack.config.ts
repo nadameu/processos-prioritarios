@@ -18,14 +18,9 @@ const defaultConfig: webpack.Configuration = {
 	module: {
 		rules: [
 			{
-				test: /\.tsx?$/,
+				test: /\.[jt]sx?$/,
 				exclude: /node_modules/,
 				use: ['babel-loader', 'ts-loader'],
-			},
-			{
-				test: /\.jsx?$/,
-				exclude: /node_modules/,
-				loader: 'babel-loader',
 			},
 			{
 				test: /\.s?css$/,

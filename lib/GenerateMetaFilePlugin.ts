@@ -1,6 +1,11 @@
 import { stringify } from 'userscript-meta';
 import webpack from 'webpack';
 
+interface PluginOptions {
+	metadata: Object;
+	filename: string;
+}
+
 export default class GenerateMetaFilePlugin implements webpack.Plugin {
 	options: PluginOptions;
 

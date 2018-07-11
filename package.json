@@ -3,9 +3,9 @@
 	"version": "26.0.0",
 	"main": "src/index.ts",
 	"scripts": {
-		"build": "webpack --env.production --mode production",
-		"build:dev": "webpack --env.development --mode development",
-		"serve": "webpack-dev-server --env.development --mode development --open",
+		"build": "ts-node -P tsconfig.webpack.json node_modules/webpack/bin/webpack.js --env.production --mode production",
+		"build:dev": "ts-node -P tsconfig.webpack.json node_modules/webpack/bin/webpack.js --env.development --mode development",
+		"serve": "ts-node -P tsconfig.webpack.json node_modules/webpack-dev-server/bin/webpack-dev-server.js --env.development --mode development --open",
 		"start": "yarn run build:dev && yarn run serve",
 		"test": "jest",
 		"type-check": "tsc"
