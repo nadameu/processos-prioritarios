@@ -1,4 +1,4 @@
-import { Task } from './Task';
+import { Task } from '../src/Task';
 import { Either, Left, Right } from './Either';
 import { Maybe, Nothing, Just } from './Maybe';
 
