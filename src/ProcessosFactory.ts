@@ -1,15 +1,13 @@
 import { Either } from '../adt/Either';
 import { Iter } from '../adt/Iter';
-import { Maybe } from '../adt/Maybe';
-import { liftA4 } from '../adt/liftA';
-import { queryAll } from './Query/queryAll';
+import { liftA2 } from '../adt/liftA';
+import { Just, Maybe, Nothing } from '../adt/Maybe';
+import { maybeToEither } from '../adt/nt';
 import { CompetenciasCorregedoria } from './CompetenciasCorregedoria';
-import { Situacoes } from './Situacoes';
-import { RegrasCorregedoria } from './RegrasCorregedoria';
+import { queryAll } from './Query/queryAll';
 import { queryOne } from './Query/queryOne';
-
-const { Left, Right } = Either;
-const { Just, Nothing } = Maybe;
+import { RegrasCorregedoria } from './RegrasCorregedoria';
+import { Situacoes } from './Situacoes';
 
 export interface LocalizadorProcesso {
 	id: string;
@@ -18,59 +16,65 @@ export interface LocalizadorProcesso {
 	sigla: string;
 }
 
+function getText(node: Node): Maybe<string> {
+	return Maybe.fromNullable(node.textContent)
+		.map(t => t.trim())
+		.filter(t => t !== '');
+}
+
+function nextElementSibling(node: Node): Maybe<Element> {
+	return Maybe.fromNullable(node.nextSibling).chain(node =>
+		Maybe.chainRec(
+			(next, done, node) =>
+				node.nodeType === Node.ELEMENT_NODE
+					? Just(done(node as Element))
+					: Maybe.fromNullable(node.nextSibling).map(next),
+			node
+		)
+	);
+}
+
 export class LocalizadorProcessoFactory {
 	static fromInput(
 		input: HTMLInputElement
 	): Either<Error, LocalizadorProcesso> {
-		const id = Either.of<Error, string>(input.value);
+		const id = input.value;
 
-		const elementoNome = Either.fromNullable(input.nextSibling).orElse(() =>
-			Left(new Error('Não foi possível obter a sigla do localizador.'))
-		);
+		const elementoNome: Maybe<Node> = Maybe.fromNullable(input.nextSibling);
 
 		const principal = elementoNome.map(n => n.nodeName.toLowerCase() === 'u');
 
-		const sigla = elementoNome.chain(n =>
-			Maybe.fromNullable(n.textContent)
-				.map(t => t.trim())
-				.filter(Boolean)
-				.maybe<Either<Error, string>>(
-					() =>
-						Left(new Error('Não foi possível obter a sigla do localizador.')),
-					Right
-				)
-		);
+		const sigla = elementoNome.chain(getText);
 
-		const lembrete = elementoNome
-			.chain<Element>(node => {
-				let elt = node.nextSibling;
-				while (elt !== null) {
-					if (elt.nodeType === Node.ELEMENT_NODE) return Right(elt as Element);
-					elt = elt.nextSibling;
-				}
-				return Left(new Error('Ícone do lembrete não encontrado.'));
-			})
-			.map(elt =>
-				Maybe.of(elt)
-					.mapNullable(l => l.getAttribute('onmouseover'))
-					.mapNullable(t =>
-						t.match(
-							/^return infraTooltipMostrar\('Obs: (.*) \/ ([^(]+)\(([^)]+)\)','',400\);$/
-						)
-					)
-					.map(m => m[1])
-			);
-		return liftA4(
-			(id, principal, sigla, lembrete): LocalizadorProcesso => ({
+		const getAttribute = (name: string) => (obj: Element): Maybe<string> =>
+			Maybe.fromNullable(obj.getAttribute(name));
+		const match = (re: RegExp) => Maybe.lift((text: string) => text.match(re));
+		const index = (i: number) => <A>(obj: { [index: number]: A }): A => obj[i];
+
+		const iconeLembrete = elementoNome.chain(nextElementSibling);
+		const lembrete = iconeLembrete
+			.chain(getAttribute('onmouseover'))
+			.chain(
+				match(
+					/^return infraTooltipMostrar\('Obs: (.*) \/ ([^(]+)\(([^)]+)\)','',400\);$/
+				)
+			)
+			.map<string | undefined>(index(1))
+			.getOrElse(undefined);
+
+		const result = liftA2(
+			(principal, sigla): LocalizadorProcesso => ({
 				id,
 				principal,
 				sigla,
-				lembrete: lembrete.maybe(() => undefined, a => a),
+				lembrete,
 			}),
-			id,
 			principal,
-			sigla,
-			lembrete
+			sigla
+		);
+		return maybeToEither(
+			() => new Error('Não foi possível obter os dados do localizador.'),
+			result
 		);
 	}
 }
@@ -277,15 +281,14 @@ class Processo {
 export class ProcessoFactory {
 	static fromLinha(linha: HTMLTableRowElement) {
 		var processo = new Processo();
-		const numClasse = Maybe.fromNullable(linha.dataset.classe).map(Number);
-		const numCompetencia = Maybe.fromNullable(linha.dataset.competencia).map(
+		const numClasse = SMaybe.fromNullable(linha.dataset.classe).map(Number);
+		const numCompetencia = SMaybe.fromNullable(linha.dataset.competencia).map(
 			Number
 		);
-		const link = Maybe.fromNullable(linha.cells[1]).chain(celula =>
-			queryOne<HTMLAnchorElement>('a', celula).either<Maybe<HTMLAnchorElement>>(
-				Nothing,
-				Just
-			)
+		const link = SMaybe.fromNullable(linha.cells[1]).chain(celula =>
+			queryOne<HTMLAnchorElement>('a', celula).either<
+				SMaybe<HTMLAnchorElement>
+			>(Nothing, Just)
 		);
 		const numprocFormatado = link
 			.mapNullable(l => l.textContent)
