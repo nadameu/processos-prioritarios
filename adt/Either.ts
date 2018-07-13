@@ -1,5 +1,3 @@
-type Nullable<A> = A | null | undefined;
-
 interface ILeft<L> {
 	isLeft: true;
 	leftValue: L;

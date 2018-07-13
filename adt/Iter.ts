@@ -4,12 +4,16 @@ type Reduce<T> = <U>(f: Reducer<T, U>, seed: U) => U;
 type Reducer<T, U> = (acc: U, a: T) => U;
 type Transducer<T, U> = <V>(next: Reducer<U, V>) => Reducer<T, V>;
 
-export class Iter<A> implements Iterable<A> {
+class IterImpl<A> implements Iterable<A> {
+	reduce: Reduce<A>;
+	constructor(reduce: Reduce<A>) {
+		if (!(this instanceof Iter)) return new Iter(reduce);
+		this.reduce = reduce;
+	}
+
 	[Symbol.iterator](): Iterator<A> {
 		return this.toArray()[Symbol.iterator]();
 	}
-
-	constructor(public readonly reduce: Reduce<A>) {}
 
 	chain<B>(f: (_: A) => Iter<B> | ArrayLike<B> | Iterable<B>): Iter<B> {
 		return this.transduce(
@@ -36,8 +40,11 @@ export class Iter<A> implements Iterable<A> {
 			<C>(next: Reducer<B, C>): Reducer<A, C> => (acc, a) => next(acc, f(a))
 		);
 	}
-	sequence<F>(this: Iter<Apply<F, A>>, A: Applicative<F>): Apply<F, Iter<A>> {
-		return this.traverse(A, a => a);
+	sequence<F, B>(
+		this: Iter<Apply<F, B>>,
+		A: Applicative<F>
+	): Apply<F, Iter<B>> {
+		return this.traverse(<any>A, a => <any>a);
 	}
 	transduce<B>(transducer: Transducer<A, B>): Iter<B> {
 		return new Iter((next, seed) =>
@@ -84,3 +91,10 @@ export class Iter<A> implements Iterable<A> {
 		return new Iter((f, seed) => f(seed, a));
 	}
 }
+type IterImplConstructor = typeof IterImpl;
+export interface Iter<A> extends IterImpl<A> {}
+interface IterConstructor extends IterImplConstructor {
+	<A>(reduce: Reduce<A>): Iter<A>;
+	new <A>(reduce: Reduce<A>): Iter<A>;
+}
+export const Iter = IterImpl as IterConstructor;
