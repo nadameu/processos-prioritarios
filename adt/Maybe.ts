@@ -1,81 +1,95 @@
-import { Apply } from './ADT';
-import { Either, Left } from './Either';
-
 type Nullable<A> = A | null | undefined;
-export abstract class Maybe<A> implements Apply<Maybe<any>, A> {
-	abstract maybe<B>(f: () => B, g: (_: A) => B): B;
+
+type INothing = { isNothing: true };
+type IJust<A> = { isNothing: false; value: A };
+type IMaybe<A> = INothing | IJust<A>;
+
+class MaybeImpl<A> {
+	isNothing: boolean;
+	isJust: boolean;
+	maybe: <B>(f: () => B, g: (_: A) => B) => B;
+	constructor(maybe: IMaybe<A>) {
+		this.isNothing = maybe.isNothing;
+		this.isJust = !maybe.isNothing;
+		this.maybe = maybe.isNothing ? f => f() : (_, g) => g(maybe.value);
+	}
 
 	ap<B>(that: Maybe<(_: A) => B>): Maybe<B> {
 		return this.chain(a => that.map(f => f(a)));
 	}
 	chain<B>(f: (_: A) => Maybe<B>): Maybe<B> {
-		return this.maybe(() => (<any>this) as Maybe<never>, f);
+		return this.maybe(() => (<any>this) as Nothing, f);
 	}
 	filter<B extends A>(p: (a: A) => a is B): Maybe<B>;
 	filter(p: (_: A) => boolean): Maybe<A>;
 	filter(p: (_: A) => boolean): Maybe<A> {
-		return this.chain(a => (p(a) ? just(a) : nothing()));
+		return this.chain(a => (p(a) ? Just(a) : Nothing()));
 	}
 	getOrElse(a: A): A {
 		return this.maybe(() => a, a => a);
 	}
-	isJust(): this is Just<A> {
-		return this.maybe(() => false, () => true);
-	}
-	isNothing(): this is Nothing {
-		return this.maybe(() => true, () => false);
-	}
 	map<B>(f: (_: A) => B): Maybe<B> {
-		return this.chain(a => just(f(a)));
-	}
-	mapNullable<B>(f: (_: A) => Nullable<B>): Maybe<B> {
-		return this.chain(a => Maybe.fromNullable(f(a)));
+		return this.chain(a => Just(f(a)));
 	}
 
-	static Just<A>(a: A): Just<A> {
-		return new Just(a);
-	}
-	static Nothing() {
-		return new Nothing();
-	}
-
-	static chainRec<A, B>(f: (_: A) => Maybe<Either<A, B>>, seed: A): Maybe<B> {
-		let result = f(seed);
-		while (result.isJust()) {
-			const either = result.value;
-			if (either.isRight()) return just(either.rightValue);
-			result = f((either as Left<A>).leftValue);
+	static chainRec<A, B>(
+		f: <C>(next: (_: A) => C, done: (_: B) => C, _: A) => Maybe<C>,
+		seed: A
+	): Maybe<B> {
+		type Next = { isDone: false; value: A };
+		type Done = { isDone: true; value: B };
+		type Result = Next | Done;
+		const next = (value: A): Next => ({ isDone: false, value });
+		const done = (value: B): Done => ({ isDone: true, value });
+		let result = f<Result>(next, done, seed);
+		while (result.isJust) {
+			if (result.value.isDone) return Just(result.value.value);
+			result = f<Result>(next, done, result.value.value);
 		}
-		return nothing();
+		return Nothing();
 	}
 
-	static fromNullable<A>(value: Nullable<A>): Maybe<A> {
-		return value == null ? nothing() : just(value);
+	static fromNullable<A>(a: Nullable<A>): Maybe<A> {
+		return a == null ? Nothing() : Just(a);
 	}
+
+	static lift<A, B>(f: (_: A) => Nullable<B>): (_: A) => Maybe<B> {
+		return function(a) {
+			return Maybe.fromNullable(f(a));
+		};
+	}
+
 	static of<A>(value: A): Maybe<A> {
-		return new Just(value);
+		return Just(value);
 	}
 }
 
-export class Just<A> extends Maybe<A> {
-	constructor(public readonly value: A) {
-		super();
-	}
-	maybe(_: any, f: Function) {
-		return f(this.value);
+class JustImpl<A> extends MaybeImpl<A> {
+	isJust: true = true;
+	isNothing: false = false;
+	constructor(readonly value: A) {
+		super({ isNothing: false, value });
 	}
 }
-export const just = Maybe.Just;
+export interface Just<A> extends JustImpl<A> {}
+export function Just<A>(value: A): Just<A> {
+	return new JustImpl(value);
+}
 
-export class Nothing extends Maybe<never> {
+class NothingImpl<A = never> extends MaybeImpl<A> {
+	isJust: false = false;
+	isNothing: true = true;
 	constructor() {
-		super();
-	}
-	maybe(f: Function) {
-		return f();
+		super({ isNothing: true });
 	}
 }
-export const nothing = Maybe.Nothing;
+export interface Nothing<A = never> extends NothingImpl<A> {}
+export function Nothing<A = never>(): Nothing<A> {
+	return new NothingImpl();
+}
+
+export type Maybe<A> = Just<A> | Nothing<A>;
+export const Maybe = MaybeImpl;
 
 declare module './Iter' {
 	interface Iter<A> {
@@ -85,6 +99,11 @@ declare module './Iter' {
 }
 
 declare module './liftA' {
+	export function liftA2<A, B, C>(
+		f: (a: A, b: B) => C,
+		fa: Maybe<A>,
+		fb: Maybe<B>
+	): Maybe<C>;
 	export function liftA3<A, B, C, D>(
 		f: (a: A, b: B, c: C) => D,
 		fa: Maybe<A>,

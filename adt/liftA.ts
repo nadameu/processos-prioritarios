@@ -1,5 +1,13 @@
 import { Apply } from './ADT';
 
+export function liftA2<F, A, B, C>(
+	f: (a: A, b: B) => C,
+	fa: Apply<F, A>,
+	fb: Apply<F, B>
+): Apply<F, C> {
+	return fb.ap(fa.map(a => (b: B) => f(a, b)));
+}
+
 export function liftA3<F, A, B, C, D>(
 	f: (a: A, b: B, c: C) => D,
 	fa: Apply<F, A>,
