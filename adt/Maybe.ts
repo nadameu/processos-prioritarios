@@ -91,10 +91,12 @@ export function Nothing<A = never>(): Nothing<A> {
 export type Maybe<A> = Just<A> | Nothing<A>;
 export const Maybe = MaybeImpl;
 
-declare module './Iter' {
-	interface Iter<A> {
-		sequence<F, B>(this: Iter<Maybe<B>>, A: typeof Maybe): Maybe<Iter<B>>;
-		traverse<L, B>(A: typeof Maybe, f: (_: A) => Maybe<B>): Maybe<Iter<B>>;
+declare module './Foldable' {
+	interface Foldable<A> {
+		traverse<B>(A: typeof Maybe, f: (_: A) => Maybe<B>): Maybe<Foldable<B>>;
+	}
+	interface FoldableConstructor {
+		sequence<A>(A: typeof Maybe, as: Foldable<Maybe<A>>): Maybe<Foldable<A>>;
 	}
 }
 

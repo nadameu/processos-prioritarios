@@ -1,37 +1,25 @@
-import { Either } from '../adt/Either';
-import { Iter } from '../adt/Iter';
+import { Either, Left, Right } from '../adt/Either';
 import { liftA2 } from '../adt/liftA';
 import { Just, Maybe, Nothing } from '../adt/Maybe';
-import { maybeToEither } from '../adt/nt';
+import { maybeToEither, eitherToMaybe } from '../adt/nt';
 import { CompetenciasCorregedoria } from './CompetenciasCorregedoria';
 import { queryAll } from './Query/queryAll';
 import { queryOne } from './Query/queryOne';
 import { RegrasCorregedoria } from './RegrasCorregedoria';
 import { Situacoes } from './Situacoes';
+import { getAttribute } from './Util/getAttribute';
+import { index } from './Util/index';
+import { match } from './Util/match';
+import { nextElementSibling } from './Util/nextElementSibling';
+import { textContent } from './Util/textContent';
+import { Foldable } from '../adt/Foldable';
+import { replace } from './Util/replace';
 
 export interface LocalizadorProcesso {
 	id: string;
 	lembrete?: string;
 	principal: boolean;
 	sigla: string;
-}
-
-function getText(node: Node): Maybe<string> {
-	return Maybe.fromNullable(node.textContent)
-		.map(t => t.trim())
-		.filter(t => t !== '');
-}
-
-function nextElementSibling(node: Node): Maybe<Element> {
-	return Maybe.fromNullable(node.nextSibling).chain(node =>
-		Maybe.chainRec(
-			(next, done, node) =>
-				node.nodeType === Node.ELEMENT_NODE
-					? Just(done(node as Element))
-					: Maybe.fromNullable(node.nextSibling).map(next),
-			node
-		)
-	);
 }
 
 export class LocalizadorProcessoFactory {
@@ -44,12 +32,7 @@ export class LocalizadorProcessoFactory {
 
 		const principal = elementoNome.map(n => n.nodeName.toLowerCase() === 'u');
 
-		const sigla = elementoNome.chain(getText);
-
-		const getAttribute = (name: string) => (obj: Element): Maybe<string> =>
-			Maybe.fromNullable(obj.getAttribute(name));
-		const match = (re: RegExp) => Maybe.lift((text: string) => text.match(re));
-		const index = (i: number) => <A>(obj: { [index: number]: A }): A => obj[i];
+		const sigla = elementoNome.chain(textContent);
 
 		const iconeLembrete = elementoNome.chain(nextElementSibling);
 		const lembrete = iconeLembrete
@@ -59,30 +42,29 @@ export class LocalizadorProcessoFactory {
 					/^return infraTooltipMostrar\('Obs: (.*) \/ ([^(]+)\(([^)]+)\)','',400\);$/
 				)
 			)
-			.map<string | undefined>(index(1))
-			.getOrElse(undefined);
+			.chain(index(1));
 
 		const result = liftA2(
 			(principal, sigla): LocalizadorProcesso => ({
 				id,
 				principal,
 				sigla,
-				lembrete,
+				lembrete: (<Maybe<string | undefined>>lembrete).getOrElse(undefined),
 			}),
 			principal,
 			sigla
 		);
-		return maybeToEither(
-			() => new Error('Não foi possível obter os dados do localizador.'),
-			result
+		return result.maybe<Either<Error, LocalizadorProcesso>>(
+			() => Left(new Error('Não foi possível obter os dados do localizador.')),
+			Right
 		);
 	}
 }
 
-export class LocalizadoresProcesso extends Iter<LocalizadorProcesso> {
+export class LocalizadoresProcesso extends Foldable<LocalizadorProcesso> {
 	readonly principal: Maybe<LocalizadorProcesso>;
-	constructor(iter: Iter<LocalizadorProcesso>) {
-		super(iter.reduce.bind(iter));
+	constructor(localizadores: Foldable<LocalizadorProcesso>) {
+		super(localizadores.reduce.bind(localizadores));
 		this.principal = this.reduce<Maybe<LocalizadorProcesso>>(
 			(principal, atual) => (atual.principal ? Just(atual) : principal),
 			Nothing()
@@ -165,7 +147,7 @@ const calcularRecessoData = (data: Date) => {
 const calcularAtraso = (dtA: Date, dtB: Date) => {
 	const a = dtA.getTime();
 	const b = dtB.getTime();
-	const { inicio: dtInicio, retorno: dtRetorno } = calcularRecessoData(a);
+	const { inicio: dtInicio, retorno: dtRetorno } = calcularRecessoData(dtA);
 	const inicio = dtInicio.getTime();
 	const retorno = dtRetorno.getTime();
 	return (
@@ -279,39 +261,53 @@ class Processo {
 }
 
 export class ProcessoFactory {
-	static fromLinha(linha: HTMLTableRowElement) {
-		var processo = new Processo();
-		const numClasse = SMaybe.fromNullable(linha.dataset.classe).map(Number);
-		const numCompetencia = SMaybe.fromNullable(linha.dataset.competencia).map(
+	static fromLinha(linha: HTMLTableRowElement): Either<Error, Processo> {
+		const numClasse = Maybe.fromNullable(linha.dataset.classe).map(Number);
+		const numCompetencia = Maybe.fromNullable(linha.dataset.competencia).map(
 			Number
 		);
-		const link = SMaybe.fromNullable(linha.cells[1]).chain(celula =>
-			queryOne<HTMLAnchorElement>('a', celula).either<
-				SMaybe<HTMLAnchorElement>
-			>(Nothing, Just)
-		);
-		const numprocFormatado = link
-			.mapNullable(l => l.textContent)
-			.filter(Boolean);
-		const numproc = numprocFormatado.map(t => t.replace(/[-.]/g, ''));
-		var links = linha.cells[1].getElementsByTagName('a');
-		if (links.length === 2) {
-			var onmouseover = [...links[1].attributes].filter(
-				attr => attr.name === 'onmouseover'
-			)[0].value;
-			var [, codigoLembrete] = onmouseover.match(
-				/^return infraTooltipMostrar\('([^']+)','Lembretes',400\);$/
-			);
-			var div = document.createElement('div');
-			div.innerHTML = codigoLembrete;
-			var tabela = div.childNodes[0];
-			var linhas = Array.from(tabela.rows).reverse();
-			processo.lembretes = linhas.map(linha => {
-				let celula = linha.cells[2];
-				celula.innerHTML = celula.innerHTML.replace(/<br.*?>/g, '\0\n');
-				return celula.textContent;
-			});
-		}
+		const link = Maybe.fromNullable(linha.cells[1])
+			.map(celula => queryOne<HTMLAnchorElement>('a', celula))
+			.chain(eitherToMaybe);
+		const numprocFormatado = link.chain(textContent);
+		const numproc = numprocFormatado.map(replace(/[-.]/g, ''));
+		const lembretes = queryAll<HTMLAnchorElement>('a', linha.cells[1]);
+		const links = queryAll<HTMLAnchorElement>('a', linha.cells[1]);
+		const lembretes: string[] =
+			links.count() !== 2
+				? []
+				: links
+						.skip(1)
+						.chain(l => Foldable.from(l.attributes))
+						.filter(attr => attr.name === 'onmouseover')
+						.limit(1)
+						.reduce<Maybe<string>>((_, a) => Just(a.value), Nothing())
+						.chain(
+							match(
+								/^return infraTooltipMostrar\('([^']+)','Lembretes',400\);$/
+							)
+						)
+						.chain(index(1))
+						.map(codigoLembrete => {
+							const div = document.createElement('div');
+							div.innerHTML = codigoLembrete;
+							return div.childNodes[0];
+						})
+						.filter(
+							(node): node is Element => node.nodeType === Node.ELEMENT_NODE
+						)
+						.filter((elt): elt is HTMLTableElement => elt.matches('table'))
+						.map(tabela => Foldable.from(tabela.rows))
+						.maybe(() => Foldable.empty(), x => x)
+						.reverse()
+						.map(linha => linha.cells[2])
+						.filter((c): c is HTMLTableCellElement => c != null)
+						.map(c => {
+							c.innerHTML = c.innerHTML.replace(/<br.*?>/g, '\0\n');
+							return c.textContent;
+						})
+						.filter(t => t !== null && t !== '');
+
 		var textoSigilo = linha.cells[1].getElementsByTagName('br')[0].nextSibling
 			.textContent;
 		processo.sigilo = Number(textoSigilo.match(/Nível ([0-5])/)[1]);

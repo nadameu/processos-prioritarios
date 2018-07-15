@@ -92,16 +92,18 @@ export function Right<R, L = never>(rightValue: R): Right<R, L> {
 export type Either<L, R> = Left<L, R> | Right<R, L>;
 export const Either = EitherImpl;
 
-declare module './Iter' {
-	interface Iter<A> {
-		sequence<F, L, R>(
-			this: Iter<Either<L, R>>,
-			A: typeof Either
-		): Either<L, Iter<R>>;
+declare module './Foldable' {
+	interface Foldable<A> {
 		traverse<L, B>(
 			A: typeof Either,
 			f: (_: A) => Either<L, B>
-		): Either<L, Iter<B>>;
+		): Either<L, Foldable<B>>;
+	}
+	interface FoldableConstructor {
+		sequence<L, A>(
+			A: typeof Either,
+			as: Foldable<Either<L, A>>
+		): Either<L, Foldable<A>>;
 	}
 }
 

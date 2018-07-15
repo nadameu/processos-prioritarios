@@ -1,6 +1,6 @@
-import { Iter } from '../../adt/Iter';
+import { Foldable } from '../../adt/Foldable';
 
 export const queryAll = <T extends Element>(
 	selector: string,
 	context: NodeSelector
-): Iter<T> => Iter.from(context.querySelectorAll<T>(selector));
+): Foldable<T> => Foldable.from(context.querySelectorAll<T>(selector));
