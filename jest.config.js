@@ -5,4 +5,5 @@ module.exports = {
 	},
 	testRegex: '\\.test\\.[jt]sx?$',
 	moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+	watchPathIgnorePatterns: ['<rootDir>/node_modules/'],
 };
