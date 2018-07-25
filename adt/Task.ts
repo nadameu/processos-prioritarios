@@ -65,7 +65,7 @@ abstract class TaskBase<E, A> {
 			return guard(() => {
 				cancelThis();
 				cancelThat();
-			});
+			}) as Cancel;
 		});
 	}
 	chain<B>(f: (_: A) => Task<E, B>): Task<E, B> {
