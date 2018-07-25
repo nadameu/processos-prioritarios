@@ -374,8 +374,14 @@ describe('Task', () => {
 					const actual = fork(a.alt(b).map(f));
 					expect(actual).toEqual(expected);
 				};
-				test('first is faster', generateTest(after(100, 60), after(200, 600)));
-				test('second is faster', generateTest(after(200, 60), after(100, 60)));
+				test(
+					'first is faster',
+					generateTest(after(100, 60), rejectAfter(200, 'fail'))
+				);
+				test(
+					'second is faster',
+					generateTest(after(200, 60), rejectAfter(100, 'fail'))
+				);
 			});
 		});
 	});

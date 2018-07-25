@@ -1,5 +1,3 @@
-import { rejected } from '../src/Task';
-
 type Cancel = () => void;
 type Handler<T> = (_: T) => void;
 type Fork<E, A> = (onReject: Handler<E>, onResolve: Handler<A>) => Cancel;
