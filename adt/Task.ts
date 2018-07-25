@@ -1,3 +1,5 @@
+import { rejected } from '../src/Task';
+
 type Cancel = () => void;
 type Handler<T> = (_: T) => void;
 type Fork<E, A> = (onReject: Handler<E>, onResolve: Handler<A>) => Cancel;
@@ -7,7 +9,7 @@ type ForkInput<E, A> = (
 ) => void | Cancel;
 abstract class TaskBase<E, A> {
 	abstract fork: Fork<E, A>;
-	protected _constructor(fork: ForkInput<E, A>) {
+	protected _init(fork: ForkInput<E, A>) {
 		this.fork = (rej, res) => {
 			let isDone = false;
 			let cancel: Cancel = noop;
@@ -21,6 +23,46 @@ abstract class TaskBase<E, A> {
 			if (typeof newCancel === 'function') cancel = newCancel;
 			return guard() as Cancel;
 		};
+	}
+	alt(that: Task<E, A>): Task<E, A> {
+		return Task((rej, res) => {
+			let isDone = false;
+			const guard = <T = never>(f: Handler<T> = noop) => (value: T) => {
+				if (isDone) return;
+				isDone = true;
+				f(value);
+			};
+
+			let cancelThis = noop;
+			let cancelThat = noop;
+			cancelThis = this.fork(
+				guard(reason => {
+					rej(reason);
+					cancelThat();
+				}),
+				guard(value => {
+					res(value);
+					cancelThat;
+				})
+			);
+			cancelThat = that.fork(
+				guard(reason => {
+					rej(reason);
+					cancelThis();
+				}),
+				guard(value => {
+					res(value);
+					cancelThis();
+				})
+			);
+			if (isDone) {
+				cancelThat();
+			}
+			return guard(() => {
+				cancelThis();
+				cancelThat();
+			}) as Cancel;
+		});
 	}
 	ap<B>(that: Task<E, (_: A) => B>): Task<E, B> {
 		type F = (_: A) => B;
@@ -62,11 +104,17 @@ abstract class TaskBase<E, A> {
 					}
 				}
 			);
+			if (isDone) {
+				cancelThat();
+			}
 			return guard(() => {
 				cancelThis();
 				cancelThat();
 			}) as Cancel;
 		});
+	}
+	bimap<B, C>(f: (_: E) => B, g: (_: A) => C): Task<B, C> {
+		return Task((rej, res) => this.fork(e => rej(f(e)), a => res(g(a))));
 	}
 	chain<B>(f: (_: A) => Task<E, B>): Task<E, B> {
 		return Task((rej, res) => {
@@ -105,28 +153,31 @@ abstract class TaskBase<E, A> {
 	static rejected<E, A>(value: E): Task<E, A> {
 		return Task(rej => rej(value));
 	}
+
+	static zero<E = never, A = never>(): Task<E, A> {
+		return Task(noop);
+	}
 }
 export interface Task<E, A> extends TaskBase<E, A> {}
-type C = typeof TaskBase;
-interface TaskConstructor extends C {
+type TaskBaseConstructor = typeof TaskBase;
+interface TaskConstructor extends TaskBaseConstructor {
 	new <E, A>(fork: ForkInput<E, A>): Task<E, A>;
 	<E, A>(fork: ForkInput<E, A>): Task<E, A>;
 }
 export const Task: TaskConstructor = (() => {
-	const Task: any = function Task<E, A>(fork: ForkInput<E, A>): Task<E, A> {
+	const Task: any = function Task<E, A>(fork: ForkInput<E, A>) {
 		const ret = Object.create(Task.prototype);
-		Task.prototype._constructor.call(ret, fork);
+		ret._init(fork);
 		return ret;
 	};
-	Task.prototype = Object.create(TaskBase.prototype);
-	Task.prototype.constructor = Task;
 	const keys = Object.getOwnPropertyNames(
 		TaskBase
 	) as (keyof TaskConstructor)[];
-	const doNotInclude = ['prototype', 'name', 'length'];
+	const doNotInclude = ['name', 'length'];
 	keys.filter(k => !doNotInclude.includes(k)).forEach(key => {
 		Task[key] = TaskBase[key];
 	});
+	Task.prototype.constructor = Task;
 	return Task;
 })();
 
