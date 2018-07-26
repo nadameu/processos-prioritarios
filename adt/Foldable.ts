@@ -1,4 +1,5 @@
 import { Applicative, Apply } from './ADT';
+import { liftA2 } from './liftA';
 
 interface IFoldable<A> {
 	<B>(f: (acc: B, a: A) => B, seed: B): B;
@@ -32,6 +33,17 @@ class FoldableImpl<A> {
 				p(a) ? next(acc, a) : acc
 		);
 	}
+	isEmpty(): boolean {
+		const escape = {};
+		try {
+			return this.reduce(() => {
+				throw escape;
+			}, true);
+		} catch (e) {
+			if (e === escape) return false;
+			throw e;
+		}
+	}
 	limit(n: number): Foldable<A> {
 		return Foldable((f, seed) => {
 			let i = -1;
@@ -46,21 +58,11 @@ class FoldableImpl<A> {
 			<C>(next: Reducer<B, C>): Reducer<A, C> => (acc, a) => next(acc, f(a))
 		);
 	}
+	reduceRight<B>(f: (acc: B, a: A) => B, seed: B): B {
+		return this.toArray().reduceRight((acc, a) => f(acc, a), seed);
+	}
 	reverse(): Foldable<A> {
-		type ReverseList<A> = Cons<A> | Nil;
-		type Cons<A> = { value: A; prev: ReverseList<A> };
-		type Nil = null;
-		const list = this.reduce<ReverseList<A>>(
-			(acc, a) => ({ value: a, prev: acc }),
-			null
-		);
-		return Foldable((f, seed) => {
-			let acc = seed;
-			for (let current = list; current !== null; current = current.prev) {
-				acc = f(acc, current.value);
-			}
-			return acc;
-		});
+		return Foldable((f, seed) => this.reduceRight(f, seed));
 	}
 	skip(n: number): Foldable<A> {
 		return Foldable((f, seed) => {
@@ -76,12 +78,9 @@ class FoldableImpl<A> {
 	): Foldable<B> {
 		return Foldable((next, seed) => this.reduce(transducer(next), seed));
 	}
-	traverse<F, B>(
-		A: Applicative<F>,
-		f: (_: A) => Apply<F, B>
-	): Apply<F, Foldable<B>> {
-		return this.reduce<Apply<F, Foldable<B>>>(
-			(acc, a) => f(a).ap(acc.map(bs => (b: B) => bs.concat(Foldable.of(b)))),
+	traverse<B>(A: Applicative, f: (_: A) => Apply<B>): Apply<Foldable<B>> {
+		return this.reduce(
+			(acc, a) => liftA2((a, b) => a.concat(Foldable.of(b)), acc, f(a)),
 			A.of(Foldable.empty())
 		);
 	}
@@ -112,11 +111,11 @@ class FoldableImpl<A> {
 	static of<A>(a: A): Foldable<A> {
 		return Foldable((f, seed) => f(seed, a));
 	}
-	static sequence<F, A>(
-		A: Applicative<F>,
-		fas: Foldable<Apply<F, A>>
-	): Apply<F, Foldable<A>> {
-		return fas.traverse(<any>A, x => <any>x);
+	static sequence<A>(
+		A: Applicative,
+		fas: Foldable<Apply<A>>
+	): Apply<Foldable<A>> {
+		return fas.traverse(A as any, (x: any) => x);
 	}
 }
 export interface Foldable<A> extends FoldableImpl<A> {}

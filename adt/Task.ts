@@ -180,3 +180,40 @@ export const Task: TaskConstructor = (() => {
 })();
 
 function noop() {}
+
+declare module './Foldable' {
+	interface Foldable<A> {
+		traverse<E, B>(
+			A: typeof Task,
+			f: (_: A) => Task<E, B>
+		): Task<E, Foldable<B>>;
+	}
+	interface FoldableConstructor {
+		sequence<E, A>(
+			A: typeof Task,
+			as: Foldable<Task<E, A>>
+		): Task<E, Foldable<A>>;
+	}
+}
+
+declare module './liftA' {
+	export function liftA1<E, A, B>(f: (a: A) => B, fa: Task<E, A>): Task<E, B>;
+	export function liftA2<E, A, B, C>(
+		f: (a: A, b: B) => C,
+		fa: Task<E, A>,
+		fb: Task<E, B>
+	): Task<E, C>;
+	export function liftA3<E, A, B, C, D>(
+		f: (a: A, b: B, c: C) => D,
+		fa: Task<E, A>,
+		fb: Task<E, B>,
+		fc: Task<E, C>
+	): Task<E, D>;
+	export function liftA4<Er, A, B, C, D, E>(
+		f: (a: A, b: B, c: C, d: D) => E,
+		fa: Task<Er, A>,
+		fb: Task<Er, B>,
+		fc: Task<Er, C>,
+		fd: Task<Er, D>
+	): Task<Er, E>;
+}

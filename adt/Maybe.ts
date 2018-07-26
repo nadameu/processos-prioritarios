@@ -1,35 +1,32 @@
 type Nullable<A> = A | null | undefined;
 
-type INothing = { isNothing: true };
-type IJust<A> = { isNothing: false; value: A };
-type IMaybe<A> = INothing | IJust<A>;
+abstract class _Maybe<A> {
+	abstract isNothing: boolean;
+	abstract isJust: boolean;
+	abstract maybe<B>(b: B, f: (_: A) => B): B;
 
-class MaybeImpl<A> {
-	isNothing: boolean;
-	isJust: boolean;
-	maybe: <B>(f: () => B, g: (_: A) => B) => B;
-	constructor(maybe: IMaybe<A>) {
-		this.isNothing = maybe.isNothing;
-		this.isJust = !maybe.isNothing;
-		this.maybe = maybe.isNothing ? f => f() : (_, g) => g(maybe.value);
+	alt(that: Maybe<A>): Maybe<A> {
+		return this.maybe(that, () => (<any>this) as Just<A>);
 	}
-
 	ap<B>(that: Maybe<(_: A) => B>): Maybe<B> {
 		return this.chain(a => that.map(f => f(a)));
 	}
 	chain<B>(f: (_: A) => Maybe<B>): Maybe<B> {
-		return this.maybe(() => (<any>this) as Nothing, f);
+		return this.maybe(Nothing, f);
 	}
 	filter<B extends A>(p: (a: A) => a is B): Maybe<B>;
 	filter(p: (_: A) => boolean): Maybe<A>;
 	filter(p: (_: A) => boolean): Maybe<A> {
-		return this.chain(a => (p(a) ? Just(a) : Nothing()));
+		return this.chain(a => (p(a) ? Just(a) : Nothing));
 	}
 	getOrElse(a: A): A {
-		return this.maybe(() => a, a => a);
+		return this.maybe(a, a => a);
 	}
 	map<B>(f: (_: A) => B): Maybe<B> {
 		return this.chain(a => Just(f(a)));
+	}
+	reduce<B>(f: (acc: B, a: A) => B, seed: B): B {
+		return this.maybe(seed, a => f(seed, a));
 	}
 
 	static chainRec<A, B>(
@@ -46,50 +43,65 @@ class MaybeImpl<A> {
 			if (result.value.isDone) return Just(result.value.value);
 			result = f<Result>(next, done, result.value.value);
 		}
-		return Nothing();
+		return Nothing;
 	}
 
 	static fromNullable<A>(a: Nullable<A>): Maybe<A> {
-		return a == null ? Nothing() : Just(a);
-	}
-
-	static lift<A, B>(f: (_: A) => Nullable<B>): (_: A) => Maybe<B> {
-		return function(a) {
-			return Maybe.fromNullable(f(a));
-		};
+		return a == null ? Nothing : Just(a);
 	}
 
 	static of<A>(value: A): Maybe<A> {
 		return Just(value);
 	}
-}
 
-class JustImpl<A> extends MaybeImpl<A> {
-	isJust: true = true;
-	isNothing: false = false;
-	constructor(readonly value: A) {
-		super({ isNothing: false, value });
+	static zero<A = never>(): Maybe<A> {
+		return Nothing;
 	}
 }
-export interface Just<A> extends JustImpl<A> {}
-export function Just<A>(value: A): Just<A> {
-	return new JustImpl(value);
-}
+type C = typeof _Maybe;
+interface MaybeConstructor extends C {}
 
-class NothingImpl<A = never> extends MaybeImpl<A> {
-	isJust: false = false;
-	isNothing: true = true;
-	constructor() {
-		super({ isNothing: true });
-	}
+export interface Just<A> extends _Maybe<A> {
+	isJust: true;
+	isNothing: false;
+	value: A;
 }
-export interface Nothing<A = never> extends NothingImpl<A> {}
-export function Nothing<A = never>(): Nothing<A> {
-	return new NothingImpl();
+interface JustConstructor {
+	new <A>(value: A): Just<A>;
+	<A>(value: A): Just<A>;
 }
+export const Just: JustConstructor = function Just<A>(value: A): Just<A> {
+	const ret = Object.create(Just.prototype);
+	ret.isNothing = false;
+	ret.value = value;
+	return ret;
+} as any;
+Just.prototype = Object.create(_Maybe.prototype);
+Just.prototype.constructor = Just;
+Just.prototype.isJust = true;
+Just.prototype.maybe = function<B, A>(this: Just<A>, _: B, f: (_: A) => B): B {
+	return f(this.value);
+};
+
+export interface Nothing<A = never> extends _Maybe<A> {
+	isJust: false;
+	isNothing: true;
+}
+function _Nothing<A = never>(): Nothing<A> {
+	const ret = Object.create(_Nothing.prototype);
+	ret.isNothing = true;
+	return ret;
+}
+_Nothing.prototype = Object.create(_Maybe.prototype);
+_Nothing.prototype.constructor = _Nothing;
+_Nothing.prototype.isJust = false;
+_Nothing.prototype.maybe = function<B>(b: B): B {
+	return b;
+};
+export const Nothing = _Nothing();
 
 export type Maybe<A> = Just<A> | Nothing<A>;
-export const Maybe = MaybeImpl;
+export const Maybe: MaybeConstructor = _Maybe as any;
 
 declare module './Foldable' {
 	interface Foldable<A> {
@@ -101,6 +113,7 @@ declare module './Foldable' {
 }
 
 declare module './liftA' {
+	export function liftA1<A, B>(f: (a: A) => B, fa: Maybe<A>): Maybe<B>;
 	export function liftA2<A, B, C>(
 		f: (a: A, b: B) => C,
 		fa: Maybe<A>,

@@ -1,24 +1,7 @@
-interface ILeft<L> {
-	isLeft: true;
-	leftValue: L;
-}
-interface IRight<R> {
-	isLeft: false;
-	rightValue: R;
-}
-type IEither<L, R> = ILeft<L> | IRight<R>;
-
-export class EitherImpl<L, R> {
-	isLeft: boolean;
-	isRight: boolean;
-	either: <B>(f: (_: L) => B, g: (_: R) => B) => B;
-	constructor(either: IEither<L, R>) {
-		this.isLeft = either.isLeft;
-		this.isRight = !either.isLeft;
-		this.either = either.isLeft
-			? f => f(either.leftValue)
-			: (_, g) => g(either.rightValue);
-	}
+export abstract class _Either<L, R> {
+	abstract isLeft: boolean;
+	abstract isRight: boolean;
+	abstract either<B>(f: (_: L) => B, g: (_: R) => B): B;
 
 	ap<B>(that: Either<L, (_: R) => B>): Either<L, B> {
 		return this.chain(a => that.map(f => f(a)));
@@ -65,36 +48,42 @@ export class EitherImpl<L, R> {
 	}
 }
 
-class LeftImpl<L, R = never> extends EitherImpl<L, R> {
+class _Left<L, R = never> extends _Either<L, R> {
 	isLeft: true = true;
 	isRight: false = false;
 	constructor(public readonly leftValue: L) {
-		super({ isLeft: true, leftValue });
+		super();
+	}
+	either<B>(f: (_: L) => B): B {
+		return f(this.leftValue);
 	}
 }
-export interface Left<L, R = never> extends LeftImpl<L, R> {}
+export interface Left<L, R = never> extends _Left<L, R> {}
 export function Left<L, R = never>(leftValue: L): Left<L, R> {
-	return new LeftImpl(leftValue);
+	return new _Left(leftValue);
 }
 
-class RightImpl<R, L = never> extends EitherImpl<L, R> {
+class _Right<R, L = never> extends _Either<L, R> {
 	isLeft: false = false;
 	isRight: true = true;
 	constructor(public readonly rightValue: R) {
-		super({ isLeft: false, rightValue });
+		super();
+	}
+	either<B>(_: any, g: (_: R) => B): B {
+		return g(this.rightValue);
 	}
 }
-export interface Right<R, L = never> extends RightImpl<R, L> {}
+export interface Right<R, L = never> extends _Right<R, L> {}
 export function Right<R, L = never>(rightValue: R): Right<R, L> {
-	return new RightImpl(rightValue);
+	return new _Right(rightValue);
 }
 
 export type Either<L, R> = Left<L, R> | Right<R, L>;
-export const Either = EitherImpl;
+export const Either = _Either;
 
 declare module './Foldable' {
 	interface Foldable<A> {
-		traverse<L, B>(
+		traverse<B, L>(
 			A: typeof Either,
 			f: (_: A) => Either<L, B>
 		): Either<L, Foldable<B>>;
@@ -108,18 +97,22 @@ declare module './Foldable' {
 }
 
 declare module './liftA' {
-	export function liftA2<L, A, B, C>(
+	export function liftA1<A, B, L>(
+		f: (a: A) => B,
+		fa: Either<L, A>
+	): Either<L, B>;
+	export function liftA2<A, B, C, L>(
 		f: (a: A, b: B) => C,
 		fa: Either<L, A>,
 		fb: Either<L, B>
 	): Either<L, C>;
-	export function liftA3<L, A, B, C, D>(
+	export function liftA3<A, B, C, D, L>(
 		f: (a: A, b: B, c: C) => D,
 		fa: Either<L, A>,
 		fb: Either<L, B>,
 		fc: Either<L, C>
 	): Either<L, D>;
-	export function liftA4<L, A, B, C, D, E>(
+	export function liftA4<A, B, C, D, E, L>(
 		f: (a: A, b: B, c: C, d: D) => E,
 		fa: Either<L, A>,
 		fb: Either<L, B>,
