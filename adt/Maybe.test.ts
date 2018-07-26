@@ -1,5 +1,4 @@
 import { Just, Maybe, Nothing } from './Maybe';
-import { access } from 'fs';
 
 test('Just()', () => {
 	const createJust = () => Just(42);
