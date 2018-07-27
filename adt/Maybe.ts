@@ -1,3 +1,5 @@
+import { Applicative, Apply } from './ADT';
+
 type Nullable<A> = A | null | undefined;
 
 abstract class _Maybe<A> {
@@ -27,6 +29,12 @@ abstract class _Maybe<A> {
 	}
 	reduce<B>(f: (acc: B, a: A) => B, seed: B): B {
 		return this.maybe(seed, a => f(seed, a));
+	}
+	traverse<B>(A: Applicative, f: (_: A) => Apply<B>): Apply<Maybe<B>> {
+		return this.reduce<Apply<Maybe<B>>>(
+			(acc, a) => f(a).ap(acc.map(ma => (b: B) => ma.alt(Maybe.of(b)))),
+			A.of(Nothing)
+		);
 	}
 
 	static chainRec<A, B>(
@@ -114,11 +122,7 @@ declare module './Foldable' {
 
 declare module './liftA' {
 	export function liftA1<A, B>(f: (a: A) => B, fa: Maybe<A>): Maybe<B>;
-	export function liftA2<A, B, C>(
-		f: (a: A, b: B) => C,
-		fa: Maybe<A>,
-		fb: Maybe<B>
-	): Maybe<C>;
+	export function liftA2<A, B, C>(f: (a: A, b: B) => C, fa: Maybe<A>, fb: Maybe<B>): Maybe<C>;
 	export function liftA3<A, B, C, D>(
 		f: (a: A, b: B, c: C) => D,
 		fa: Maybe<A>,
