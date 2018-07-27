@@ -1,12 +1,8 @@
+import { Maybe } from '../adt/Maybe';
+import { Task } from '../adt/Task';
 import { obterDocumento } from './obterDocumento';
 import { queryAll } from './Query/queryAll';
 import { queryOne } from './Query/queryOne';
-import { pipeline } from './Util/pipeline';
-import { Task } from '../adt/Task';
-import { Either, Right, Left } from '../adt/Either';
-import { eitherToTask, maybeToTask } from '../adt/nt';
-import { Maybe } from '../adt/Maybe';
-import { Functor, Chain } from '../adt/ADT';
 
 let resultado: Task<Error, HTMLFormElement>;
 
@@ -16,8 +12,12 @@ export function obterFormularioRelatorioGeral(doc: Document): Task<Error, HTMLFo
 			.filter(ehLinkEsperado)
 			.map(link => link.href)
 			.head()
-			.map(obterDocumento)
-			.map(t => t.map(obterFormulario));
+			.maybe<Task<Error, string>>(
+				Task.rejected(new Error('Link para o relatório geral não encontrado.')),
+				Task.of
+			)
+			.chain(obterDocumento)
+			.chain(obterFormulario);
 	}
 	return resultado;
 }
@@ -26,8 +26,11 @@ function ehLinkEsperado(link: HTMLAnchorElement): boolean {
 	return new URL(link.href).searchParams.get('acao') === 'relatorio_geral_listar';
 }
 
-function obterFormulario(doc: Document) {
-	return queryOne<HTMLButtonElement>('#btnConsultar', doc).chain(consultar =>
-		Maybe.fromNullable(consultar.form)
-	);
+function obterFormulario(doc: Document): Task<Error, HTMLFormElement> {
+	return queryOne<HTMLButtonElement>('#btnConsultar', doc)
+		.chain(consultar => Maybe.fromNullable(consultar.form))
+		.maybe(
+			Task.rejected(new Error('Não foi possível obter o formulário do relatório geral.')),
+			Task.of
+		);
 }
