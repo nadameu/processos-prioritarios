@@ -1,4 +1,5 @@
 import { Task } from './Task';
+import { Either, Left, Right } from './Either';
 
 describe('Task', () => {
 	describe('constructor', () => {
@@ -25,48 +26,46 @@ describe('Task', () => {
 			const v = Task.of<never, number>(x);
 			const u = Task.of<never, (_: number) => number>(f);
 			test('v.ap(A.of(x => x)) == v', () => {
-				const expected = fork(v);
-				const actual = fork(v.ap(Task.of((x: number) => x)));
+				const expected = run(v);
+				const actual = run(v.ap(Task.of((x: number) => x)));
 				expect(actual).toEqual(expected);
 			});
 			test('A.of(x).ap(A.of(f)) == A.of(f(x))', () => {
-				const expected = fork(Task.of(f(x)));
-				const actual = fork(Task.of(x).ap(Task.of(f)));
+				const expected = run(Task.of(f(x)));
+				const actual = run(Task.of(x).ap(Task.of(f)));
 				expect(actual).toEqual(expected);
 			});
 			test('A.of(y).ap(u) == u.ap(A.of(f => f(y)))', () => {
-				const expected = fork(
-					u.ap(Task.of<never, (_: (_: number) => number) => number>(f => f(y)))
-				);
-				const actual = fork(Task.of<never, number>(y).ap(u));
+				const expected = run(u.ap(Task.of<never, (_: (_: number) => number) => number>(f => f(y))));
+				const actual = run(Task.of<never, number>(y).ap(u));
 				expect(actual).toEqual(expected);
 			});
 		});
 		test('rejected', () => {
-			const expected = fork(Task.of(600)).res;
-			const actual = fork(Task.rejected(600)).rej;
+			const expected = run(Task.of(600)).res;
+			const actual = run(Task.rejected(600)).rej;
 			expect(actual).toEqual(expected);
 		});
 		describe('zero', () => {
 			it('should never resolve', () => {
-				expect(fork(Task.zero())).toEqual({ rej: 0, res: 0 });
+				expect(run(Task.zero())).toEqual({ rej: 0, res: 0 });
 			});
 			const x = Task.of<never, number>(60);
 			const f = (x: number) => x / 4;
 			const zero = Task.zero<never, number>();
 			test('x.alt(A.zero()) == x', () => {
-				const expected = fork(x);
-				const actual = fork(x.alt(zero));
+				const expected = run(x);
+				const actual = run(x.alt(zero));
 				expect(actual).toEqual(expected);
 			});
 			test('A.zero().alt(x) == x', () => {
-				const expected = fork(x);
-				const actual = fork(zero.alt(x));
+				const expected = run(x);
+				const actual = run(zero.alt(x));
 				expect(actual).toEqual(expected);
 			});
 			test('A.zero().map(f) == A.zero()', () => {
-				const expected = fork(zero);
-				const actual = fork(zero.map(f));
+				const expected = run(zero);
+				const actual = run(zero.map(f));
 				expect(actual).toEqual(expected);
 			});
 		});
@@ -75,37 +74,37 @@ describe('Task', () => {
 	describe('Instance methods', () => {
 		describe('fork', () => {
 			test('resolves once', () => {
-				const task = Task<string, number>((rej, res) => {
-					res(60);
-					res(99);
-					rej('ERROR');
+				const task = Task<string, number>(handler => {
+					handler(Right(60));
+					handler(Right(99));
+					handler(Left('ERROR'));
 				});
-				expect(fork(task)).toEqual({ rej: 0, res: [60] });
+				expect(run(task)).toEqual({ rej: 0, res: [60] });
 			});
 			test('rejects once', () => {
-				const task = Task<number, string>((rej, res) => {
-					rej(60);
-					rej(99);
-					res('ERROR');
+				const task = Task<number, string>(handler => {
+					handler(Left(60));
+					handler(Left(99));
+					handler(Right('ERROR'));
 				});
-				expect(fork(task)).toEqual({ rej: [60], res: 0 });
+				expect(run(task)).toEqual({ rej: [60], res: 0 });
 			});
 			test('can be cancelled', () => {
 				const sideEffect = jest.fn();
-				const cancelRes = Task((_, res) => {
+				const cancelRes = Task(handler => {
 					const timer = setTimeout(() => {
 						sideEffect();
-						res(600);
+						handler(Right(600));
 					});
 					return () => clearTimeout(timer);
-				}).fork(sideEffect, sideEffect);
-				const cancelRej = Task(rej => {
+				}).run(sideEffect);
+				const cancelRej = Task(handler => {
 					const timer = setTimeout(() => {
 						sideEffect();
-						rej('FAIL');
+						handler(Left('FAIL'));
 					});
 					return () => clearTimeout(timer);
-				}).fork(sideEffect, sideEffect);
+				}).run(sideEffect);
 				cancelRes();
 				cancelRej();
 				jest.runAllTimers();
@@ -118,46 +117,43 @@ describe('Task', () => {
 				const f = (x: number) => Task.of(x / 3);
 				const g = (x: number) => Task.of(x + 8);
 				const m = Task.of(60);
-				const expected = fork(m.chain(x => f(x).chain(g)));
-				const actual = fork(m.chain(f).chain(g));
+				const expected = run(m.chain(x => f(x).chain(g)));
+				const actual = run(m.chain(f).chain(g));
 				expect(actual).toEqual(expected);
 			});
 			const x = 60;
 			const f = (x: number) => x * 40;
 			const after = <T>(ms: number, value: T): Task<never, T> =>
-				Task((_, res) => {
-					const timer = setTimeout(res, ms, value);
+				Task(handler => {
+					const timer = setTimeout(handler, ms, Right(value));
 					return () => clearTimeout(timer);
 				});
 			test('synchronous', () => {
-				const expected = fork(Task.of(f(x)));
-				const actual = fork(Task.of(x).chain(x => Task.of(f(x))));
+				const expected = run(Task.of(f(x)));
+				const actual = run(Task.of(x).chain(x => Task.of(f(x))));
 				expect(actual).toEqual(expected);
 			});
 			test('asynchronous', () => {
 				jest.useFakeTimers();
 				const task = after(200, x).chain(x => after(200, f(x)));
-				const onResolve = jest.fn();
-				const onReject = jest.fn();
-				task.fork(onReject, onResolve);
+				const handler = jest.fn();
+				task.run(handler);
 				jest.advanceTimersByTime(350);
-				expect(onReject).not.toHaveBeenCalled();
-				expect(onResolve).not.toHaveBeenCalled();
+				expect(handler).not.toHaveBeenCalled();
 				jest.advanceTimersByTime(50);
-				expect(onReject).not.toHaveBeenCalled();
-				expect(onResolve.mock.calls).toEqual([[f(x)]]);
+				expect(handler.mock.calls).toEqual([[Right(f(x))]]);
 			});
 			test('cancelling', () => {
 				const sideEffect = jest.fn();
 				const createTask = () =>
-					Task<never, number>((_, res) => {
+					Task<never, number>(handler => {
 						const timer = setTimeout(() => {
 							sideEffect();
-							res(600);
+							handler(Right(600));
 						});
 						return () => clearTimeout(timer);
 					});
-				const result = fork(createTask().chain(createTask), true);
+				const result = run(createTask().chain(createTask), true);
 				expect(result).toEqual({ rej: 0, res: 0 });
 				expect(sideEffect).not.toHaveBeenCalled();
 			});
@@ -167,46 +163,43 @@ describe('Task', () => {
 				const f = (x: string) => Task.rejected(`BEFORE${x}`);
 				const g = (x: string) => Task.rejected(`${x}AFTER`);
 				const m = Task.rejected('FAIL');
-				const expected = fork(m.orElse(x => f(x).orElse(g)));
-				const actual = fork(m.orElse(f).orElse(g));
+				const expected = run(m.orElse(x => f(x).orElse(g)));
+				const actual = run(m.orElse(f).orElse(g));
 				expect(actual).toEqual(expected);
 			});
 			const x = 'fail';
 			const f = (x: string) => `BEFORE${x}`;
 			const after = <T>(ms: number, value: T): Task<T, never> =>
-				Task(rej => {
-					const timer = setTimeout(rej, ms, value);
+				Task(handler => {
+					const timer = setTimeout(handler, ms, Left(value));
 					return () => clearTimeout(timer);
 				});
 			test('synchronous', () => {
-				const expected = fork(Task.rejected(f(x)));
-				const actual = fork(Task.rejected(x).orElse(x => Task.rejected(f(x))));
+				const expected = run(Task.rejected(f(x)));
+				const actual = run(Task.rejected(x).orElse(x => Task.rejected(f(x))));
 				expect(actual).toEqual(expected);
 			});
 			test('asynchronous', () => {
 				jest.useFakeTimers();
 				const task = after(200, x).orElse(x => after(200, f(x)));
-				const onResolve = jest.fn();
-				const onReject = jest.fn();
-				task.fork(onReject, onResolve);
+				const handler = jest.fn();
+				task.run(handler);
 				jest.advanceTimersByTime(350);
-				expect(onReject).not.toHaveBeenCalled();
-				expect(onResolve).not.toHaveBeenCalled();
+				expect(handler).not.toHaveBeenCalled();
 				jest.advanceTimersByTime(50);
-				expect(onReject.mock.calls).toEqual([[f(x)]]);
-				expect(onResolve).not.toHaveBeenCalled();
+				expect(handler.mock.calls).toEqual([[Left(f(x))]]);
 			});
 			test('cancelling', () => {
 				const sideEffect = jest.fn();
 				const createTask = () =>
-					Task<string, never>(rej => {
+					Task<string, never>(handler => {
 						const timer = setTimeout(() => {
 							sideEffect();
-							rej('FAIL');
+							handler(Left('FAIL'));
 						});
 						return () => clearTimeout(timer);
 					});
-				const result = fork(createTask().orElse(createTask), true);
+				const result = run(createTask().orElse(createTask), true);
 				expect(result).toEqual({ rej: 0, res: 0 });
 				expect(sideEffect).not.toHaveBeenCalled();
 			});
@@ -216,13 +209,13 @@ describe('Task', () => {
 			const f = (x: number) => x / 3;
 			const g = (x: number) => x + 10;
 			test('u.map(a => a) == u', () => {
-				const expected = fork(u);
-				const actual = fork(u.map(a => a));
+				const expected = run(u);
+				const actual = run(u.map(a => a));
 				expect(actual).toEqual(expected);
 			});
 			test('u.map(x => f(g(x)) == u.map(g).map(f)', () => {
-				const expected = fork(u.map(g).map(f));
-				const actual = fork(u.map(x => f(g(x))));
+				const expected = run(u.map(g).map(f));
+				const actual = run(u.map(x => f(g(x))));
 				expect(actual).toEqual(expected);
 			});
 		});
@@ -231,13 +224,13 @@ describe('Task', () => {
 			const f = (x: string) => `BEFORE${x}`;
 			const g = (x: string) => `${x}AFTER`;
 			test('u.mapRejected(a => a) == u', () => {
-				const expected = fork(u);
-				const actual = fork(u.mapRejected(a => a));
+				const expected = run(u);
+				const actual = run(u.mapRejected(a => a));
 				expect(actual).toEqual(expected);
 			});
 			test('u.mapRejected(x => f(g(x)) == u.mapRejected(g).mapRejected(f)', () => {
-				const expected = fork(u.mapRejected(g).mapRejected(f));
-				const actual = fork(u.mapRejected(x => f(g(x))));
+				const expected = run(u.mapRejected(g).mapRejected(f));
+				const actual = run(u.mapRejected(x => f(g(x))));
 				expect(actual).toEqual(expected);
 			});
 		});
@@ -245,57 +238,54 @@ describe('Task', () => {
 			const x = 60;
 			const f = (x: number) => x * 40;
 			const after = <T>(ms: number, value: T): Task<never, T> =>
-				Task((_, res) => {
-					const timer = setTimeout(res, ms, value);
+				Task(handler => {
+					const timer = setTimeout(handler, ms, Right(value));
 					return () => clearTimeout(timer);
 				});
 			test('v.ap(u.ap(a.map(f => g => x => f(g(x))))) == v.ap(u).ap(a)', () => {
 				type Fn<A, B> = (_: A) => B;
-				const t = <A, B, C>(f: Fn<B, C>) => (g: Fn<A, B>) => (x: A): C =>
-					f(g(x));
+				const t = <A, B, C>(f: Fn<B, C>) => (g: Fn<A, B>) => (x: A): C => f(g(x));
 				const a = Task.of((x: number) => x / 4);
 				const u = Task.of((x: number) => x - 15);
 				const v = Task.of(60);
-				const expected = fork(v.ap(u).ap(a));
+				const expected = run(v.ap(u).ap(a));
 				jest.resetAllMocks();
-				const actual = fork(v.ap(u.ap(a.map(f => t(f)))));
+				const actual = run(v.ap(u.ap(a.map(f => t(f)))));
 				expect(actual).toEqual(expected);
 			});
 			test('should run in parallel', () => {
 				jest.useFakeTimers();
 				const task = after(200, x).ap(after(200, f));
-				const onResolve = jest.fn();
-				const onReject = jest.fn();
-				task.fork(onReject, onResolve);
+				const handler = jest.fn();
+				task.run(handler);
 				jest.advanceTimersByTime(250);
-				expect(onReject).not.toHaveBeenCalled();
-				expect(onResolve.mock.calls).toEqual([[f(x)]]);
+				expect(handler.mock.calls).toEqual([[Right(f(x))]]);
 			});
 			describe('cancel on failures', () => {
 				test('failed that', () => {
 					const sideEffect = jest.fn();
-					const task = Task<string, number>((_, res) => {
+					const task = Task<string, number>(handler => {
 						const timer = setTimeout(() => {
 							sideEffect();
-							res(x);
+							handler(Right(x));
 						});
 						return () => clearTimeout(timer);
 					}).ap<never>(Task.rejected('no go'));
-					expect(fork(task)).toEqual({ rej: ['no go'], res: 0 });
+					expect(run(task)).toEqual({ rej: ['no go'], res: 0 });
 					expect(sideEffect).not.toHaveBeenCalled();
 				});
 				test('failed this', () => {
 					const sideEffect = jest.fn();
 					const task = Task.rejected<string, number>('no go').ap(
-						Task<string, (_: number) => number>((_, res) => {
+						Task<string, (_: number) => number>(handler => {
 							const timer = setTimeout(() => {
 								sideEffect();
-								res(f);
+								handler(Right(f));
 							});
 							return () => clearTimeout(timer);
 						})
 					);
-					expect(fork(task)).toEqual({ rej: ['no go'], res: 0 });
+					expect(run(task)).toEqual({ rej: ['no go'], res: 0 });
 					expect(sideEffect).not.toHaveBeenCalled();
 				});
 			});
@@ -305,15 +295,15 @@ describe('Task', () => {
 			const rejectedP = Task.rejected<string, number>('fail');
 			describe('p.bimap(a => a, b => b) == p', () => {
 				test('resolved', () => {
-					const expected = fork(resolvedP);
+					const expected = run(resolvedP);
 					jest.resetAllMocks();
-					const actual = fork(resolvedP.bimap(a => a, b => b));
+					const actual = run(resolvedP.bimap(a => a, b => b));
 					expect(actual).toEqual(expected);
 				});
 				test('rejected', () => {
-					const expected = fork(rejectedP);
+					const expected = run(rejectedP);
 					jest.resetAllMocks();
-					const actual = fork(rejectedP.bimap(a => a, b => b));
+					const actual = run(rejectedP.bimap(a => a, b => b));
 					expect(actual).toEqual(expected);
 				});
 			});
@@ -324,64 +314,58 @@ describe('Task', () => {
 				const i = (x: number) => x + 19;
 				test('resolved', () => {
 					const p = resolvedP;
-					const expected = fork(p.bimap(g, i).bimap(f, h));
+					const expected = run(p.bimap(g, i).bimap(f, h));
 					jest.resetAllMocks();
-					const actual = fork(p.bimap(a => f(g(a)), b => h(i(b))));
+					const actual = run(p.bimap(a => f(g(a)), b => h(i(b))));
 					expect(actual).toEqual(expected);
 				});
 				test('rejected', () => {
 					const p = rejectedP;
-					const expected = fork(p.bimap(g, i).bimap(f, h));
+					const expected = run(p.bimap(g, i).bimap(f, h));
 					jest.resetAllMocks();
-					const actual = fork(p.bimap(a => f(g(a)), b => h(i(b))));
+					const actual = run(p.bimap(a => f(g(a)), b => h(i(b))));
 					expect(actual).toEqual(expected);
 				});
 			});
 		});
 		describe('alt', () => {
 			const after = <T>(ms: number, value: T): Task<any, T> =>
-				Task((_, res) => {
-					const timer = setTimeout(res, ms, value);
+				Task(handler => {
+					const timer = setTimeout(handler, ms, Right(value));
 					return () => clearTimeout(timer);
 				});
 			const rejectAfter = <T>(ms: number, reason: T): Task<T, any> =>
-				Task(rej => {
-					const timer = setTimeout(rej, ms, reason);
+				Task(handler => {
+					const timer = setTimeout(handler, ms, Left(reason));
 					return () => clearTimeout(timer);
 				});
-			const ok = Task.of<any, number>(60);
-			const fail = Task.rejected<string, any>('fail');
+			const ok = Task.of<string, number>(60);
+			const fail = Task.rejected<string, number>('fail');
 			const zero = Task.zero<string, number>();
 			const f = (x: number) => x / 5;
-			describe('a.alt(b).alt(c) == a.alt(b.alt(c))', () => {
-				type T = Task<string, number>;
-				const generateTest = (a: T, b: T, c: T) => () => {
-					const expected = fork(a.alt(b.alt(c)));
-					const actual = fork(a.alt(b).alt(c));
+			test('a.alt(b).alt(c) == a.alt(b.alt(c))', () => {
+				[
+					[ok, fail, zero],
+					[ok, zero, fail],
+					[fail, ok, zero],
+					[fail, zero, ok],
+					[zero, ok, fail],
+					[zero, fail, ok],
+				].forEach(([a, b, c]) => {
+					const expected = run(a.alt(b.alt(c)));
+					const actual = run(a.alt(b).alt(c));
 					expect(actual).toEqual(expected);
-				};
-				test('ok, fail, zero', generateTest(ok, fail, zero));
-				test('ok, zero, fail', generateTest(ok, zero, fail));
-				test('fail, ok, zero', generateTest(fail, ok, zero));
-				test('fail, zero, ok', generateTest(fail, zero, ok));
-				test('zero, ok, fail', generateTest(zero, ok, fail));
-				test('zero, fail, ok', generateTest(zero, fail, ok));
+				});
 			});
 			describe('a.alt(b).map(f) == a.map(f).alt(b.map(f))', () => {
 				type T = Task<string, number>;
 				const generateTest = (a: T, b: T) => () => {
-					const expected = fork(a.map(f).alt(b.map(f)));
-					const actual = fork(a.alt(b).map(f));
+					const expected = run(a.map(f).alt(b.map(f)));
+					const actual = run(a.alt(b).map(f));
 					expect(actual).toEqual(expected);
 				};
-				test(
-					'first is faster',
-					generateTest(after(100, 60), rejectAfter(200, 'fail'))
-				);
-				test(
-					'second is faster',
-					generateTest(after(200, 60), rejectAfter(100, 'fail'))
-				);
+				test('first is faster', generateTest(after(100, 60), rejectAfter(200, 'fail')));
+				test('second is faster', generateTest(after(200, 60), rejectAfter(100, 'fail')));
 			});
 		});
 	});
@@ -394,20 +378,17 @@ interface Result<E, A> {
 	res: SingleResult<A>;
 }
 
-function fork<E, A>(task: Task<E, A>, cancel = false): Result<E, A> {
+function run<E, A>(task: Task<E, A>, cancel = false): Result<E, A> {
 	jest.useFakeTimers();
-	const onReject = jest.fn();
-	const onResolve = jest.fn();
-	const doCancel = task.fork(onReject, onResolve);
+	const handler = jest.fn();
+	const doCancel = task.run(handler);
 	if (cancel) doCancel();
 	jest.runAllTimers();
-	const rejCalls = onReject.mock.calls;
-	const resCalls = onResolve.mock.calls;
-	const first = <T>(arr: T[]): T => arr[0];
-	const computeResult = <T>(arr: T[][]): SingleResult<T> =>
-		arr.length === 0 ? 0 : arr.map(first);
+	const calls: Either<E, A>[] = handler.mock.calls.map(args => args[0]);
+	const rej = calls.filter((e): e is Left<E> => e.isLeft).map(e => e.leftValue);
+	const res = calls.filter((e): e is Right<A> => !e.isLeft).map(e => e.rightValue);
 	return {
-		rej: computeResult(rejCalls),
-		res: computeResult(resCalls),
+		rej: rej.length === 0 ? 0 : rej,
+		res: res.length === 0 ? 0 : res,
 	};
 }

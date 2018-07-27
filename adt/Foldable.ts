@@ -1,5 +1,6 @@
 import { Applicative, Apply } from './ADT';
 import { liftA2 } from './liftA';
+import { Just, Maybe, Nothing } from './Maybe';
 
 interface IFoldable<A> {
 	<B>(f: (acc: B, a: A) => B, seed: B): B;
@@ -15,8 +16,7 @@ class FoldableImpl<A> {
 
 	chain<B>(f: (_: A) => Foldable<B>): Foldable<B> {
 		return this.transduce(
-			<C>(next: Reducer<B, C>): Reducer<A, C> => (acc, a) =>
-				f(a).reduce(next, acc)
+			<C>(next: Reducer<B, C>): Reducer<A, C> => (acc, a) => f(a).reduce(next, acc)
 		);
 	}
 	concat(that: Foldable<A>): Foldable<A> {
@@ -29,20 +29,23 @@ class FoldableImpl<A> {
 	filter(p: (_: A) => boolean): Foldable<A>;
 	filter(p: (_: A) => boolean) {
 		return this.transduce(
-			<C>(next: Reducer<A, C>): Reducer<A, C> => (acc, a) =>
-				p(a) ? next(acc, a) : acc
+			<C>(next: Reducer<A, C>): Reducer<A, C> => (acc, a) => (p(a) ? next(acc, a) : acc)
 		);
 	}
-	isEmpty(): boolean {
-		const escape = {};
+	head(): Maybe<A> {
+		const escape: { value?: A } = {};
 		try {
-			return this.reduce(() => {
+			return this.reduce((_, head) => {
+				escape.value = head;
 				throw escape;
-			}, true);
+			}, Nothing);
 		} catch (e) {
-			if (e === escape) return false;
+			if (e === escape) return Just(escape.value as A);
 			throw e;
 		}
+	}
+	isEmpty(): boolean {
+		return this.head().isNothing;
 	}
 	limit(n: number): Foldable<A> {
 		return Foldable((f, seed) => {
@@ -54,9 +57,7 @@ class FoldableImpl<A> {
 		});
 	}
 	map<B>(f: (_: A) => B): Foldable<B> {
-		return this.transduce(
-			<C>(next: Reducer<B, C>): Reducer<A, C> => (acc, a) => next(acc, f(a))
-		);
+		return this.transduce(<C>(next: Reducer<B, C>): Reducer<A, C> => (acc, a) => next(acc, f(a)));
 	}
 	reduceRight<B>(f: (acc: B, a: A) => B, seed: B): B {
 		return this.toArray().reduceRight((acc, a) => f(acc, a), seed);
@@ -73,9 +74,7 @@ class FoldableImpl<A> {
 	toArray(): Array<A> {
 		return this.reduce<A[]>((acc, a) => (acc.push(a), acc), []);
 	}
-	transduce<B>(
-		transducer: <C>(next: Reducer<B, C>) => Reducer<A, C>
-	): Foldable<B> {
+	transduce<B>(transducer: <C>(next: Reducer<B, C>) => Reducer<A, C>): Foldable<B> {
 		return Foldable((next, seed) => this.reduce(transducer(next), seed));
 	}
 	traverse<B>(A: Applicative, f: (_: A) => Apply<B>): Apply<Foldable<B>> {
@@ -111,10 +110,7 @@ class FoldableImpl<A> {
 	static of<A>(a: A): Foldable<A> {
 		return Foldable((f, seed) => f(seed, a));
 	}
-	static sequence<A>(
-		A: Applicative,
-		fas: Foldable<Apply<A>>
-	): Apply<Foldable<A>> {
+	static sequence<A>(A: Applicative, fas: Foldable<Apply<A>>): Apply<Foldable<A>> {
 		return fas.traverse(A as any, (x: any) => x);
 	}
 }

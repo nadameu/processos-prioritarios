@@ -1,10 +1,4 @@
 import main from './main';
+import { either } from '../adt/SEither';
 
-main(document)(
-	e => {
-		console.error(e);
-	},
-	x => {
-		x && console.log('Resultado:', x);
-	}
-);
+either(e => console.error(e), x => (x ? console.log('Resultado:', x) : undefined), main(document));

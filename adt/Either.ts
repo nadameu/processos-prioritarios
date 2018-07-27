@@ -54,7 +54,7 @@ class _Left<L, R = never> extends _Either<L, R> {
 	constructor(public readonly leftValue: L) {
 		super();
 	}
-	either<B>(f: (_: L) => B): B {
+	either<B>(f: (_: L) => B, _: (_: R) => B): B {
 		return f(this.leftValue);
 	}
 }
@@ -69,7 +69,7 @@ class _Right<R, L = never> extends _Either<L, R> {
 	constructor(public readonly rightValue: R) {
 		super();
 	}
-	either<B>(_: any, g: (_: R) => B): B {
+	either<B>(_: (_: L) => B, g: (_: R) => B): B {
 		return g(this.rightValue);
 	}
 }
@@ -83,24 +83,15 @@ export const Either = _Either;
 
 declare module './Foldable' {
 	interface Foldable<A> {
-		traverse<B, L>(
-			A: typeof Either,
-			f: (_: A) => Either<L, B>
-		): Either<L, Foldable<B>>;
+		traverse<B, L>(A: typeof Either, f: (_: A) => Either<L, B>): Either<L, Foldable<B>>;
 	}
 	interface FoldableConstructor {
-		sequence<L, A>(
-			A: typeof Either,
-			as: Foldable<Either<L, A>>
-		): Either<L, Foldable<A>>;
+		sequence<L, A>(A: typeof Either, as: Foldable<Either<L, A>>): Either<L, Foldable<A>>;
 	}
 }
 
 declare module './liftA' {
-	export function liftA1<A, B, L>(
-		f: (a: A) => B,
-		fa: Either<L, A>
-	): Either<L, B>;
+	export function liftA1<A, B, L>(f: (a: A) => B, fa: Either<L, A>): Either<L, B>;
 	export function liftA2<A, B, C, L>(
 		f: (a: A, b: B) => C,
 		fa: Either<L, A>,

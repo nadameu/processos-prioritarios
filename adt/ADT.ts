@@ -8,3 +8,8 @@ export interface Apply<A> extends Functor<A> {
 export interface Applicative {
 	of<A>(a: A): Apply<A>;
 }
+export interface Chain<A> extends Apply<A> {
+	ap<B>(that: Chain<(_: A) => B>): Chain<B>;
+	chain<B>(f: (_: A) => Chain<B>): Chain<B>;
+	map<B>(f: (_: A) => B): Chain<B>;
+}
