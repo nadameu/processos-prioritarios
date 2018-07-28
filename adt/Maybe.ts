@@ -2,7 +2,7 @@ import { Applicative, Apply } from './ADT';
 
 type Nullable<A> = A | null | undefined;
 
-abstract class _Maybe<A> {
+abstract class Maybe$abstract<A> {
 	abstract isNothing: boolean;
 	abstract isJust: boolean;
 	abstract maybe<B>(b: B, f: (_: A) => B): B;
@@ -36,8 +36,9 @@ abstract class _Maybe<A> {
 			A.of(Nothing)
 		);
 	}
-
-	static chainRec<A, B>(
+}
+const Maybe$static = {
+	chainRec<A, B>(
 		f: <C>(next: (_: A) => C, done: (_: B) => C, _: A) => Maybe<C>,
 		seed: A
 	): Maybe<B> {
@@ -46,61 +47,68 @@ abstract class _Maybe<A> {
 		type Result = Next | Done;
 		const next = (value: A): Next => ({ isDone: false, value });
 		const done = (value: B): Done => ({ isDone: true, value });
-		let result = f<Result>(next, done, seed);
-		while (result.isJust) {
+		let value = seed;
+		while (true) {
+			const result = f<Result>(next, done, value);
+			if (result.isNothing) return result as Maybe<never>;
 			if (result.value.isDone) return Just(result.value.value);
-			result = f<Result>(next, done, result.value.value);
+			value = result.value.value;
 		}
-		return Nothing;
-	}
+	},
 
-	static fromNullable<A>(a: Nullable<A>): Maybe<A> {
+	fromNullable<A>(a: Nullable<A>): Maybe<A> {
 		return a == null ? Nothing : Just(a);
-	}
+	},
 
-	static of<A>(value: A): Maybe<A> {
+	of<A>(value: A): Maybe<A> {
 		return Just(value);
-	}
+	},
 
-	static zero<A = never>(): Maybe<A> {
+	zero<A = never>(): Maybe<A> {
 		return Nothing;
-	}
-}
-type C = typeof _Maybe;
-interface MaybeConstructor extends C {}
+	},
+};
+type Maybe$static = typeof Maybe$static;
+interface MaybeConstructor extends Maybe$static {}
 
-export interface Just<A> extends _Maybe<A> {
+export interface Just<A> extends Maybe$abstract<A> {
+	constructor: JustConstructor;
 	isJust: true;
 	isNothing: false;
 	value: A;
 }
-interface JustConstructor {
+interface JustConstructor extends MaybeConstructor {
 	new <A>(value: A): Just<A>;
 	<A>(value: A): Just<A>;
 }
-export const Just: JustConstructor = function Just<A>(value: A): Just<A> {
+export const Just: JustConstructor = Object.assign(function Just<A>(value: A): Just<A> {
 	const ret = Object.create(Just.prototype);
 	ret.isNothing = false;
 	ret.value = value;
 	return ret;
-} as any;
-Just.prototype = Object.create(_Maybe.prototype);
+}, Maybe$static) as any;
+Just.prototype = Object.create(Maybe$abstract.prototype);
 Just.prototype.constructor = Just;
 Just.prototype.isJust = true;
 Just.prototype.maybe = function<B, A>(this: Just<A>, _: B, f: (_: A) => B): B {
 	return f(this.value);
 };
 
-export interface Nothing<A = never> extends _Maybe<A> {
+export interface Nothing<A = never> extends Maybe$abstract<A> {
+	constructor: NothingConstructor;
 	isJust: false;
 	isNothing: true;
 }
-function _Nothing<A = never>(): Nothing<A> {
+interface NothingConstructor extends MaybeConstructor {
+	new <A = never>(): Nothing<A>;
+	<A = never>(): Nothing<A>;
+}
+const _Nothing: NothingConstructor = Object.assign(function _Nothing<A = never>(): Nothing<A> {
 	const ret = Object.create(_Nothing.prototype);
 	ret.isNothing = true;
 	return ret;
-}
-_Nothing.prototype = Object.create(_Maybe.prototype);
+}, Maybe$static) as any;
+_Nothing.prototype = Object.create(Maybe$abstract.prototype);
 _Nothing.prototype.constructor = _Nothing;
 _Nothing.prototype.isJust = false;
 _Nothing.prototype.maybe = function<B>(b: B): B {
@@ -109,7 +117,7 @@ _Nothing.prototype.maybe = function<B>(b: B): B {
 export const Nothing = _Nothing();
 
 export type Maybe<A> = Just<A> | Nothing<A>;
-export const Maybe: MaybeConstructor = _Maybe as any;
+export const Maybe: MaybeConstructor = Object.assign(Maybe$abstract, Maybe$static) as any;
 
 declare module './Foldable' {
 	interface Foldable<A> {
