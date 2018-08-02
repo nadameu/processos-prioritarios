@@ -5,22 +5,10 @@ type Handler<T> = (_: T) => void;
 type RunInput<E, A> = (handler: Handler<Either<E, A>>) => void | Cancel;
 abstract class Task$proto<E, A> {
 	abstract run(handler: Handler<Either<E, A>>): Cancel;
-	protected _init(run: RunInput<E, A>) {
-		this.run = handler => {
-			let isDone = false;
-			const guard = <T>(f: (x: T) => void) => (x: T): void => {
-				if (isDone) return;
-				isDone = true;
-				f(x);
-			};
-			const cancel = run(guard(handler)) || noop;
-			return guard(cancel) as Cancel;
-		};
-	}
 	alt(that: Task<E, A>): Task<E, A> {
 		return Task(handler => {
 			let isDone = false;
-			const guard = <T = never>(f: Handler<T> = noop) => (value: T) => {
+			const guard = <T = never>(f: Handler<T>) => (value: T) => {
 				if (isDone) return;
 				isDone = true;
 				f(value);
@@ -52,7 +40,7 @@ abstract class Task$proto<E, A> {
 		type F = (_: A) => B;
 		return Task(handler => {
 			let isDone = false;
-			const guard = <T = never>(f: Handler<T> = noop) => (value: T) => {
+			const guard = <T = never>(f: Handler<T>) => (value: T) => {
 				if (isDone) return;
 				isDone = true;
 				f(value);
@@ -160,8 +148,17 @@ interface TaskConstructor extends Task$static {
 }
 export const Task: TaskConstructor = (() => {
 	function Task<E, A>(run: RunInput<E, A>) {
-		const task = Object.create(Task.prototype);
-		task._init(run);
+		const task: Task<E, A> = Object.create(Task.prototype);
+		task.run = handler => {
+			let isDone = false;
+			const guard = <T>(f: (x: T) => void) => (x: T): void => {
+				if (isDone) return;
+				isDone = true;
+				f(x);
+			};
+			const cancel = run(guard(handler)) || noop;
+			return guard(cancel) as Cancel;
+		};
 		return task;
 	}
 	Task.prototype = Object.create(Task$proto.prototype);
