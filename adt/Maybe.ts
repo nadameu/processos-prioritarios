@@ -11,7 +11,7 @@ abstract class Maybe$abstract<A> {
 		return this.maybe(that, () => (<any>this) as Just<A>);
 	}
 	ap<B>(that: Maybe<(_: A) => B>): Maybe<B> {
-		return this.chain(a => that.map(f => f(a)));
+		return that.maybe(Nothing as Maybe<B>, f => this.map(f));
 	}
 	chain<B>(f: (_: A) => Maybe<B>): Maybe<B> {
 		return this.maybe(Nothing, f);
@@ -19,22 +19,19 @@ abstract class Maybe$abstract<A> {
 	filter<B extends A>(p: (a: A) => a is B): Maybe<B>;
 	filter(p: (_: A) => boolean): Maybe<A>;
 	filter(p: (_: A) => boolean): Maybe<A> {
-		return this.chain(a => (p(a) ? Just(a) : Nothing));
+		return this.maybe(Nothing as Maybe<A>, a => (p(a) ? Just(a) : Nothing));
 	}
 	getOrElse(a: A): A {
 		return this.maybe(a, a => a);
 	}
 	map<B>(f: (_: A) => B): Maybe<B> {
-		return this.chain(a => Just(f(a)));
+		return this.maybe(Nothing as Maybe<B>, a => Just(f(a)));
 	}
 	reduce<B>(f: (acc: B, a: A) => B, seed: B): B {
 		return this.maybe(seed, a => f(seed, a));
 	}
 	traverse<B>(A: Applicative, f: (_: A) => Apply<B>): Apply<Maybe<B>> {
-		return this.reduce<Apply<Maybe<B>>>(
-			(acc, a) => f(a).ap(acc.map(ma => (b: B) => ma.alt(Maybe.of(b)))),
-			A.of(Nothing)
-		);
+		return this.maybe(A.of(Nothing), a => f(a).map(Maybe.of));
 	}
 }
 const Maybe$static = {
