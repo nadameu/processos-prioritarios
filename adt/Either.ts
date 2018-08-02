@@ -1,8 +1,11 @@
-export abstract class _Either<L, R> {
+abstract class Either$abstract<L, R> {
 	abstract isLeft: boolean;
 	abstract isRight: boolean;
 	abstract either<B>(f: (_: L) => B, g: (_: R) => B): B;
 
+	alt(that: Either<L, R>): Either<L, R> {
+		return this.either(() => that, () => (<any>this) as Right<R>);
+	}
 	ap<B>(that: Either<L, (_: R) => B>): Either<L, B> {
 		return this.chain(a => that.map(f => f(a)));
 	}
@@ -12,74 +15,100 @@ export abstract class _Either<L, R> {
 	chain<B>(f: (_: R) => Either<L, B>): Either<L, B> {
 		return this.either(() => (<any>this) as Left<L>, f);
 	}
+	chainLeft<B>(f: (_: L) => Either<B, R>): Either<B, R> {
+		return this.either(f, () => (<any>this) as Right<R>);
+	}
 	map<B>(f: (_: R) => B): Either<L, B> {
 		return this.chain(a => Right(f(a)));
 	}
 	mapLeft<B>(f: (_: L) => B): Either<B, R> {
-		return this.orElse(a => Left(f(a)));
+		return this.chainLeft(a => Left(f(a)));
 	}
-	orElse<B>(f: (_: L) => Either<B, R>): Either<B, R> {
-		return this.either(f, () => (<any>this) as Right<R>);
-	}
-
-	static chainRec<L, A, B>(
+}
+const Either$static = {
+	chainRec<L, A, B>(
 		f: <C>(next: (_: A) => C, done: (_: B) => C, _: A) => Either<L, C>,
 		seed: A
 	): Either<L, B> {
-		let result = f<Either<A, B>>(Left, Right, seed);
-		while (result.isRight) {
+		let value = seed;
+		while (true) {
+			const result = f<Either<A, B>>(Left, Right, value);
+			if (result.isLeft) return result as Left<L>;
 			const inner = result.rightValue;
 			if (inner.isRight) return inner as Right<B>;
-			result = f<Either<A, B>>(Left, Right, inner.leftValue);
+			value = inner.leftValue;
 		}
-		return result as Left<L>;
-	}
+	},
 
-	static of<L, R>(value: R): Either<L, R> {
+	of<L, R>(value: R): Either<L, R> {
 		return Right(value);
-	}
+	},
 
-	static try<A>(f: () => A): Either<Error, A> {
+	try<A>(f: () => A): Either<Error, A> {
 		try {
 			return Right(f());
 		} catch (e) {
 			return Left(e);
 		}
-	}
-}
+	},
+};
+type Either$static = typeof Either$static;
+interface EitherConstructor extends Either$static {}
 
-class _Left<L, R = never> extends _Either<L, R> {
-	isLeft: true = true;
-	isRight: false = false;
-	constructor(public readonly leftValue: L) {
-		super();
-	}
-	either<B>(f: (_: L) => B, _: (_: R) => B): B {
-		return f(this.leftValue);
-	}
+export interface Left<L, R = never> extends Either$abstract<L, R> {
+	constructor: LeftConstructor;
+	isLeft: true;
+	isRight: false;
+	leftValue: L;
 }
-export interface Left<L, R = never> extends _Left<L, R> {}
-export function Left<L, R = never>(leftValue: L): Left<L, R> {
-	return new _Left(leftValue);
+interface LeftConstructor extends EitherConstructor {
+	new <L, R = never>(leftValue: L): Left<L, R>;
+	<L, R = never>(leftValue: L): Left<L, R>;
 }
+export const Left: LeftConstructor = Object.assign(function Left<L, R = never>(
+	leftValue: L
+): Left<L, R> {
+	const ret = Object.create(Left.prototype);
+	ret.isLeft = true;
+	ret.leftValue = leftValue;
+	return ret;
+},
+Either$static) as any;
+Left.prototype = Object.create(Either$abstract.prototype);
+Left.prototype.constructor = Left;
+Left.prototype.isRight = false;
+Left.prototype.either = function<B, L, R>(this: Left<L, R>, f: (_: L) => B, _: any): B {
+	return f(this.leftValue);
+};
 
-class _Right<R, L = never> extends _Either<L, R> {
-	isLeft: false = false;
-	isRight: true = true;
-	constructor(public readonly rightValue: R) {
-		super();
-	}
-	either<B>(_: (_: L) => B, g: (_: R) => B): B {
-		return g(this.rightValue);
-	}
+export interface Right<R, L = never> extends Either$abstract<L, R> {
+	constructor: RightConstructor;
+	isLeft: false;
+	isRight: true;
+	rightValue: R;
 }
-export interface Right<R, L = never> extends _Right<R, L> {}
-export function Right<R, L = never>(rightValue: R): Right<R, L> {
-	return new _Right(rightValue);
+interface RightConstructor extends EitherConstructor {
+	new <R, L = never>(rightValue: R): Right<R, L>;
+	<R, L = never>(rightValue: R): Right<R, L>;
 }
+export const Right: RightConstructor = Object.assign(function Right<R, L = never>(
+	rightValue: R
+): Right<R, L> {
+	const ret = Object.create(Right.prototype);
+	ret.isLeft = false;
+	ret.rightValue = rightValue;
+	return ret;
+},
+Either$static) as any;
+Right.prototype = Object.create(Either$abstract.prototype);
+Right.prototype.constructor = Right;
+Right.prototype.isRight = true;
+Right.prototype.either = function<B, R, L>(this: Right<R, L>, _: any, f: (_: R) => B): B {
+	return f(this.rightValue);
+};
 
 export type Either<L, R> = Left<L, R> | Right<R, L>;
-export const Either = _Either;
+export const Either: EitherConstructor = Object.assign(Either$abstract, Either$static) as any;
 
 declare module './Foldable' {
 	interface Foldable<A> {
