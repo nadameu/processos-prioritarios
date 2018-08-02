@@ -2,18 +2,21 @@ import { Applicative, Apply } from './ADT';
 import { liftA2 } from './liftA';
 import { Just, Maybe, Nothing } from './Maybe';
 
-interface IFoldable<A> {
+interface Reduce<A> {
 	<B>(f: (acc: B, a: A) => B, seed: B): B;
 }
 type Reducer<A, B> = (acc: B, _: A) => B;
 
-class FoldableImpl<A> {
-	reduce: IFoldable<A>;
-	constructor(reduce: IFoldable<A>) {
-		if (!(this instanceof Foldable)) return new FoldableImpl(reduce);
-		this.reduce = reduce;
-	}
+abstract class Foldable$abstract<A> {
+	abstract reduce<B>(f: (acc: B, _: A) => B, seed: B): B;
 
+	alt(that: Foldable<A>): Foldable<A> {
+		if (this.isEmpty()) return that;
+		return (<any>this) as Foldable<A>;
+	}
+	ap<B>(that: Foldable<(_: A) => B>): Foldable<B> {
+		return that.chain(f => this.map(f));
+	}
 	chain<B>(f: (_: A) => Foldable<B>): Foldable<B> {
 		return this.transduce(
 			<C>(next: Reducer<B, C>): Reducer<A, C> => (acc, a) => f(a).reduce(next, acc)
@@ -33,16 +36,12 @@ class FoldableImpl<A> {
 		);
 	}
 	head(): Maybe<A> {
-		const escape: { value?: A } = {};
-		try {
-			return this.reduce((_, head) => {
-				escape.value = head;
-				throw escape;
-			}, Nothing);
-		} catch (e) {
-			if (e === escape) return Just(escape.value as A);
-			throw e;
-		}
+		let found = false;
+		return this.reduce<Maybe<A>>((acc, x) => {
+			if (found) return acc;
+			found = true;
+			return Just(x);
+		}, Nothing);
 	}
 	isEmpty(): boolean {
 		return this.head().isNothing;
@@ -83,11 +82,12 @@ class FoldableImpl<A> {
 			A.of(Foldable.empty())
 		);
 	}
-
-	static empty<A = never>(): Foldable<A> {
+}
+const Foldable$static = {
+	empty<A = never>(): Foldable<A> {
 		return Foldable((_, seed) => seed);
-	}
-	static from<A>(as: Foldable<A> | ArrayLike<A> | Iterable<A>): Foldable<A> {
+	},
+	from<A>(as: Foldable<A> | ArrayLike<A> | Iterable<A>): Foldable<A> {
 		if (as instanceof Foldable) return as;
 		if ('length' in as)
 			return Foldable((f, seed) => {
@@ -106,17 +106,55 @@ class FoldableImpl<A> {
 			}
 			return acc;
 		});
-	}
-	static of<A>(a: A): Foldable<A> {
+	},
+	of<A>(a: A): Foldable<A> {
 		return Foldable((f, seed) => f(seed, a));
-	}
-	static sequence<A>(A: Applicative, fas: Foldable<Apply<A>>): Apply<Foldable<A>> {
-		return fas.traverse(A as any, (x: any) => x);
-	}
+	},
+	sequence<A>(A: Applicative, fas: Foldable<Apply<A>>): Apply<Foldable<A>> {
+		return fas.traverse(A, x => x);
+	},
+	zero<A = never>(): Foldable<A> {
+		return Foldable((_, seed) => seed);
+	},
+};
+type Foldable$static = typeof Foldable$static;
+interface FoldableConstructor extends Foldable$static {
+	new <A>(reduce: Reduce<A>): Foldable<A>;
+	<A>(reduce: Reduce<A>): Foldable<A>;
 }
-export interface Foldable<A> extends FoldableImpl<A> {}
-type Id<A> = A;
-interface FoldableConstructor extends Id<typeof FoldableImpl> {
-	<A>(reduce: IFoldable<A>): Foldable<A>;
+export interface Foldable<A> extends Foldable$abstract<A> {
+	constructor: FoldableConstructor;
+	traverse<B>(A: Applicative, f: (_: A) => Apply<B>): Apply<Foldable<B>>;
 }
-export const Foldable = FoldableImpl as FoldableConstructor;
+export const Foldable: FoldableConstructor = Object.assign(
+	function<A>(reduce: Reduce<A>): Foldable<A> {
+		const ret = Object.create(Foldable.prototype);
+		ret.reduce = reduce;
+		return ret;
+	} as any,
+	Foldable$static
+);
+Foldable.prototype = Object.create(Foldable$abstract.prototype);
+Foldable.prototype.constructor = Foldable;
+
+declare module './liftA' {
+	export function liftA1<A, B>(f: (a: A) => B, fa: Foldable<A>): Foldable<B>;
+	export function liftA2<A, B, C>(
+		f: (a: A, b: B) => C,
+		fa: Foldable<A>,
+		fb: Foldable<B>
+	): Foldable<C>;
+	export function liftA3<A, B, C, D>(
+		f: (a: A, b: B, c: C) => D,
+		fa: Foldable<A>,
+		fb: Foldable<B>,
+		fc: Foldable<C>
+	): Foldable<D>;
+	export function liftA4<A, B, C, D, E>(
+		f: (a: A, b: B, c: C, d: D) => E,
+		fa: Foldable<A>,
+		fb: Foldable<B>,
+		fc: Foldable<C>,
+		fd: Foldable<D>
+	): Foldable<E>;
+}

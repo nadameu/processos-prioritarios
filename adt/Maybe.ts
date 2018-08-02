@@ -76,6 +76,7 @@ export interface Just<A> extends Maybe$abstract<A> {
 	isJust: true;
 	isNothing: false;
 	value: A;
+	traverse<B>(A: Applicative, f: (_: A) => Apply<B>): Apply<Just<B>>;
 }
 interface JustConstructor extends MaybeConstructor {
 	new <A>(value: A): Just<A>;
@@ -98,6 +99,7 @@ export interface Nothing<A = never> extends Maybe$abstract<A> {
 	constructor: NothingConstructor;
 	isJust: false;
 	isNothing: true;
+	traverse<B>(A: Applicative, f: (_: A) => Apply<B>): Apply<Nothing<B>>;
 }
 interface NothingConstructor extends MaybeConstructor {
 	new <A = never>(): Nothing<A>;

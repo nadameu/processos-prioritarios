@@ -278,6 +278,14 @@ describe('ChainRec', () => {
 		const i = 0;
 		expect(() => Maybe.chainRec(f, i)).not.toThrow();
 	});
+	test('function returns Nothing', () => {
+		expect(
+			Maybe.chainRec(
+				(next, done, v) => (v < 0 ? Nothing : v > 50 ? Just(v).map(done) : Just(v - 1).map(next)),
+				45
+			)
+		).toEqual(Nothing);
+	});
 });
 describe('Monad', () => {
 	const a = 42;

@@ -152,7 +152,10 @@ describe('ChainRec', () => {
 	});
 	test('function returns a Left value', () => {
 		expect(
-			Either.chainRec((next, done, v) => (v < 0 ? Left(v) : Right(v - 1).map(next)), 45)
+			Either.chainRec(
+				(next, done, v) => (v < 0 ? Left(v) : v > 50 ? Right(v).map(done) : Right(v - 1).map(next)),
+				45
+			)
 		).toEqual(Left(-1));
 	});
 });
