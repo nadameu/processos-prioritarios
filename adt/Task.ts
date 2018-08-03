@@ -127,13 +127,13 @@ abstract class Task$proto<E, A> {
 	}
 }
 const Task$static = {
-	of<E, A>(value: A): Task<E, A> {
+	of<A, E = never>(value: A): Task<E, A> {
 		return Task(handler => handler(Either.of(value)));
 	},
 	liftEither<E, A>(either: Either<E, A>): Task<E, A> {
 		return Task(handler => handler(either));
 	},
-	rejected<E, A>(value: E): Task<E, A> {
+	rejected<E, A = never>(value: E): Task<E, A> {
 		return Task(handler => handler(Left(value)));
 	},
 	zero<E = never, A = never>(): Task<E, A> {

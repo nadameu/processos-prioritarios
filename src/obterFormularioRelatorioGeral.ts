@@ -10,8 +10,8 @@ export function obterFormularioRelatorioGeral(doc: Document): Task<Error, HTMLFo
 	if (!resultado) {
 		resultado = queryAll<HTMLAnchorElement>('#main-menu a[href]', doc)
 			.filter(ehLinkEsperado)
-			.map(link => link.href)
 			.head()
+			.map(href)
 			.maybe<Task<Error, string>>(
 				Task.rejected(new Error('Link para o relatório geral não encontrado.')),
 				Task.of
@@ -24,6 +24,10 @@ export function obterFormularioRelatorioGeral(doc: Document): Task<Error, HTMLFo
 
 function ehLinkEsperado(link: HTMLAnchorElement): boolean {
 	return new URL(link.href).searchParams.get('acao') === 'relatorio_geral_listar';
+}
+
+function href(link:HTMLAnchorElement):string{
+	return link.href;
 }
 
 function obterFormulario(doc: Document): Task<Error, HTMLFormElement> {
