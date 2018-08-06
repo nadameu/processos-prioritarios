@@ -2,18 +2,19 @@ export interface LazyLinkedList<A> {
 	(): LazyResult<A>;
 }
 type LazyResult<A> = LazyCons<A> | Nil;
-interface Nil {
-	isEmpty: true;
-}
-interface LazyCons<A> {
-	isEmpty: false;
-	value: A;
-	next: LazyLinkedList<A>;
-}
+type Nil = 0;
+type LazyCons<A> = [A, LazyLinkedList<A>];
 
-export const Nil: Nil = { isEmpty: true };
+export const Nil: Nil = 0;
 export function LazyCons<A>(value: A, next: LazyLinkedList<A>): LazyCons<A> {
-	return { isEmpty: false, value, next };
+	return [value, next];
+}
+export function match<A, B>(
+	list: LazyLinkedList<A>,
+	def: { Nil(): B; LazyCons(value: A, next: LazyLinkedList<A>): B }
+): B {
+	const result = list();
+	return result === Nil ? def.Nil() : def.LazyCons(result[0], result[1]);
 }
 
 export function fromArrayLike<A>(as: ArrayLike<A>): LazyLinkedList<A> {
@@ -38,48 +39,39 @@ function _fromIterable<A>(
 }
 
 export function chain<A, B>(
-	as: LazyLinkedList<A>,
+	list: LazyLinkedList<A>,
 	f: (_: A) => LazyLinkedList<B>
 ): LazyLinkedList<B> {
-	return _transformCons(as, (value, next) => concat(f(value), chain(next, f))());
+	return () =>
+		match(list, {
+			Nil: () => Nil,
+			LazyCons: (value, next) => concat(f(value), chain(next, f))(),
+		});
 }
 
-export function concat<A>(as: LazyLinkedList<A>, bs: LazyLinkedList<A>): LazyLinkedList<A> {
-	return _transform(as, bs, (value, next) => LazyCons(value, concat(next, bs)));
+export function concat<A>(listA: LazyLinkedList<A>, listB: LazyLinkedList<A>): LazyLinkedList<A> {
+	return () =>
+		match(listA, { Nil: listB, LazyCons: (value, next) => LazyCons(value, concat(next, listB)) });
 }
 
-export function map<A, B>(as: LazyLinkedList<A>, f: (_: A) => B): LazyLinkedList<B> {
-	return _transformCons(as, (value, next) => LazyCons(f(value), map(next, f)));
+export function map<A, B>(list: LazyLinkedList<A>, f: (_: A) => B): LazyLinkedList<B> {
+	return () =>
+		match<A, LazyResult<B>>(list, {
+			Nil: () => Nil,
+			LazyCons: (value, next) => LazyCons(f(value), map(next, f)),
+		});
 }
 
-export function reduce<A, B>(as: LazyLinkedList<A>, f: (acc: B, _: A) => B, seed: B): B {
+export function reduce<A, B>(list: LazyLinkedList<A>, f: (acc: B, _: A) => B, seed: B): B {
 	let acc = seed;
-	let result = as();
-	while (!result.isEmpty) {
-		acc = f(acc, result.value);
-		result = result.next();
+	let current = list();
+	while (current !== Nil) {
+		acc = f(acc, current[0]);
+		current = current[1]();
 	}
 	return acc;
 }
 
 export function toArray<A>(as: LazyLinkedList<A>): A[] {
 	return reduce(as, (a, b) => a.concat([b]), [] as A[]);
-}
-
-function _transform<A, B>(
-	list: LazyLinkedList<A>,
-	f: () => LazyResult<B>,
-	g: (value: A, next: LazyLinkedList<A>) => LazyResult<B>
-): LazyLinkedList<B> {
-	return () => {
-		const result = list();
-		return result.isEmpty ? f() : g(result.value, result.next);
-	};
-}
-
-function _transformCons<A, B>(
-	list: LazyLinkedList<A>,
-	f: (value: A, next: LazyLinkedList<A>) => LazyResult<B>
-): LazyLinkedList<B> {
-	return _transform(list, () => Nil, f);
 }
