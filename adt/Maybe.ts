@@ -1,146 +1,169 @@
-import { Applicative, Apply } from './ADT';
-
-type Nullable<A> = A | null | undefined;
-
-abstract class Maybe$abstract<A> {
-	abstract isNothing: boolean;
-	abstract isJust: boolean;
-	abstract maybe<B>(b: B, f: (_: A) => B): B;
-
-	alt(that: Maybe<A>): Maybe<A> {
-		return this.maybe(that, () => (<any>this) as Just<A>);
-	}
-	ap<B>(that: Maybe<(_: A) => B>): Maybe<B> {
-		return that.maybe(Nothing as Maybe<B>, f => this.map(f));
-	}
-	chain<B>(f: (_: A) => Maybe<B>): Maybe<B> {
-		return this.maybe(Nothing, f);
-	}
-	filter<B extends A>(p: (a: A) => a is B): Maybe<B>;
-	filter(p: (_: A) => boolean): Maybe<A>;
-	filter(p: (_: A) => boolean): Maybe<A> {
-		return this.maybe(Nothing as Maybe<A>, a => (p(a) ? Just(a) : Nothing));
-	}
-	getOrElse(a: A): A {
-		return this.maybe(a, a => a);
-	}
-	map<B>(f: (_: A) => B): Maybe<B> {
-		return this.maybe(Nothing as Maybe<B>, a => Just(f(a)));
-	}
-	reduce<B>(f: (acc: B, a: A) => B, seed: B): B {
-		return this.maybe(seed, a => f(seed, a));
-	}
-	traverse<B>(A: Applicative, f: (_: A) => Apply<B>): Apply<Maybe<B>> {
-		return this.maybe(A.of(Nothing), a => f(a).map(Maybe.of));
-	}
+interface Applicative {
+	of<A>(_: A): Apply<A>;
 }
-const Maybe$static = {
-	chainRec<A, B>(
-		f: <C>(next: (_: A) => C, done: (_: B) => C, _: A) => Maybe<C>,
-		seed: A
-	): Maybe<B> {
-		type Next = { isDone: false; value: A };
-		type Done = { isDone: true; value: B };
-		type Result = Next | Done;
-		const next = (value: A): Next => ({ isDone: false, value });
-		const done = (value: B): Done => ({ isDone: true, value });
-		let value = seed;
-		while (true) {
-			const result = f<Result>(next, done, value);
-			if (result.isNothing) return result as Maybe<never>;
-			if (result.value.isDone) return Just(result.value.value);
-			value = result.value.value;
-		}
-	},
-
-	fromNullable<A>(a: Nullable<A>): Maybe<A> {
-		return a == null ? Nothing : Just(a);
-	},
-
-	of<A>(value: A): Maybe<A> {
-		return Just(value);
-	},
-
-	zero<A = never>(): Maybe<A> {
-		return Nothing;
-	},
-};
-type Maybe$static = typeof Maybe$static;
-interface MaybeConstructor extends Maybe$static {}
-
-export interface Just<A> extends Maybe$abstract<A> {
+interface Apply<A> {
+	ap<B>(that: Apply<(_: A) => B>): Apply<B>;
+	map<B>(f: (_: A) => B): Apply<B>;
+}
+interface IMaybe<A> {
+	constructor: MaybeConstructor;
+	isNothing: boolean;
+	alt(that: Maybe<A>): Maybe<A>;
+	ap<B>(that: Maybe<(_: A) => B>): Maybe<B>;
+	chain<B>(f: (_: A) => Maybe<B>): Maybe<B>;
+	filter<B extends A>(p: (value: A) => value is B): Maybe<B>;
+	filter(p: (_: A) => boolean): Maybe<A>;
+	getOrElse(defaultValue: A): A;
+	map<B>(f: (_: A) => B): Maybe<B>;
+	reduce<B>(f: (acc: B, _: A) => B, seed: B): B;
+	traverse<B>(A: Applicative, f: (_: A) => Apply<B>): Apply<Maybe<B>>;
+}
+export interface Just<A> extends IMaybe<A> {
 	constructor: JustConstructor;
 	isJust: true;
 	isNothing: false;
 	value: A;
-	traverse<B>(A: Applicative, f: (_: A) => Apply<B>): Apply<Just<B>>;
 }
-interface JustConstructor extends MaybeConstructor {
-	new <A>(value: A): Just<A>;
-	<A>(value: A): Just<A>;
-}
-export const Just: JustConstructor = Object.assign(function Just<A>(value: A): Just<A> {
-	const ret = Object.create(Just.prototype);
-	ret.isNothing = false;
-	ret.value = value;
-	return ret;
-}, Maybe$static) as any;
-Just.prototype = Object.create(Maybe$abstract.prototype);
-Just.prototype.constructor = Just;
-Just.prototype.isJust = true;
-Just.prototype.maybe = function<B, A>(this: Just<A>, _: B, f: (_: A) => B): B {
-	return f(this.value);
-};
-
-export interface Nothing<A = never> extends Maybe$abstract<A> {
-	constructor: NothingConstructor;
+export interface Nothing<A = never> extends IMaybe<A> {
+	constructor: MaybeConstructor;
 	isJust: false;
 	isNothing: true;
-	traverse<B>(A: Applicative, f: (_: A) => Apply<B>): Apply<Nothing<B>>;
 }
-interface NothingConstructor extends MaybeConstructor {
-	new <A = never>(): Nothing<A>;
-	<A = never>(): Nothing<A>;
+
+interface MaybeConstructor {
+	prototype: Maybe<any>;
+	chainRec<A, B>(
+		f: <C>(next: (_: A) => C, done: (_: B) => C, value: A) => Maybe<C>,
+		seed: A
+	): Maybe<B>;
+	fromNullable<A>(value: A | null | undefined): Maybe<A>;
+	of<A>(value: A): Maybe<A>;
+	sequenceA<A>(A: Applicative, maybe: Maybe<Apply<A>>): Apply<Maybe<A>>;
+	zero<A = never>(): Maybe<A>;
 }
-const _Nothing: NothingConstructor = Object.assign(function _Nothing<A = never>(): Nothing<A> {
-	const ret = Object.create(_Nothing.prototype);
-	ret.isNothing = true;
-	return ret;
-}, Maybe$static) as any;
-_Nothing.prototype = Object.create(Maybe$abstract.prototype);
-_Nothing.prototype.constructor = _Nothing;
-_Nothing.prototype.isJust = false;
-_Nothing.prototype.maybe = function<B>(b: B): B {
-	return b;
+interface JustConstructor extends MaybeConstructor {
+	prototype: Just<any>;
+	<A>(value: A): Just<A>;
+	new <A>(value: A): Just<A>;
+}
+
+const Maybe$static = {
+	chainRec<A, B>(
+		f: <C>(next: (_: A) => C, done: (_: B) => C, value: A) => Maybe<C>,
+		seed: A
+	): Maybe<B> {
+		type Result = Next | Done;
+		type Next = { isDone: false; next: A };
+		type Done = { isDone: true; value: B };
+		const next = (next: A): Next => ({ isDone: false, next });
+		const done = (value: B): Done => ({ isDone: true, value });
+		let value = seed;
+		while (true) {
+			const result = f<Result>(next, done, value);
+			if (result.isNothing) return Nothing;
+			const inner = result.value;
+			if (inner.isDone) return Just(inner.value);
+			value = inner.next;
+		}
+	},
+	fromNullable(value: any) {
+		return value == null ? Nothing : Just(value);
+	},
+	of<A>(value: A): Just<A> {
+		return Just(value);
+	},
+	sequenceA<A>(A: Applicative, maybe: Maybe<Apply<A>>) {
+		return maybe.isNothing
+			? A.of(Nothing as Maybe<A>)
+			: maybe.value.map(x => Just(x));
+	},
+	zero() {
+		return Nothing;
+	},
 };
-export const Nothing = _Nothing();
+export const Maybe: MaybeConstructor = Object.assign(function Maybe() {},
+Maybe$static);
+export const Just: JustConstructor = Object.assign(function Just<A>(
+	value: A
+): Just<A> {
+	return Object.assign(Object.create(Just.prototype), {
+		isNothing: false,
+		value,
+	});
+},
+Maybe$static) as any;
+const Just$prototype = {
+	constructor: Just,
+	isJust: true,
+	alt() {
+		return this;
+	},
+	ap(this: Just<any>, that: Maybe<any>) {
+		return that.isNothing ? that : this.map(that.value);
+	},
+	chain(this: Just<any>, f: Function) {
+		return f(this.value);
+	},
+	filter(this: Just<any>, p: Function) {
+		return p(this.value) ? this : Nothing;
+	},
+	getOrElse(this: Just<any>) {
+		return this.value;
+	},
+	map(this: Just<any>, f: Function) {
+		return Just(f(this.value));
+	},
+	reduce(this: Just<any>, f: Function, seed: any) {
+		return f(seed, this.value);
+	},
+	traverse<A, B>(
+		this: Just<A>,
+		_: Applicative,
+		f: (_: A) => Apply<B>
+	): Apply<Maybe<B>> {
+		return f(this.value).map(b => Just(b));
+	},
+};
+Just.prototype = Object.assign(Object.create(Maybe.prototype), Just$prototype);
 
+export const Nothing: Nothing = (function() {
+	const Nothing = Object.assign(function Nothing<A = never>(): Nothing<A> {
+		return Object.assign(Object.create(Nothing.prototype), {
+			isNothing: true,
+		});
+	}, Maybe$static);
+	const Nothing$prototype = {
+		constructor: Nothing,
+		isJust: false,
+		alt(that: any) {
+			return that;
+		},
+		ap() {
+			return this;
+		},
+		chain() {
+			return this;
+		},
+		filter() {
+			return this;
+		},
+		getOrElse(defaultValue: any) {
+			return defaultValue;
+		},
+		map() {
+			return this;
+		},
+		reduce(_: Function, seed: any) {
+			return seed;
+		},
+		traverse(A: Applicative) {
+			return A.of(this);
+		},
+	};
+	Nothing.prototype = Object.assign(
+		Object.create(Maybe.prototype),
+		Nothing$prototype
+	);
+	return Nothing();
+})();
 export type Maybe<A> = Just<A> | Nothing<A>;
-export const Maybe: MaybeConstructor = Object.assign(Maybe$abstract, Maybe$static) as any;
-
-declare module './Foldable' {
-	interface Foldable<A> {
-		traverse<B>(A: typeof Maybe, f: (_: A) => Maybe<B>): Maybe<Foldable<B>>;
-	}
-	interface FoldableConstructor {
-		sequence<A>(A: typeof Maybe, as: Foldable<Maybe<A>>): Maybe<Foldable<A>>;
-	}
-}
-
-declare module './liftA' {
-	export function liftA1<A, B>(f: (a: A) => B, fa: Maybe<A>): Maybe<B>;
-	export function liftA2<A, B, C>(f: (a: A, b: B) => C, fa: Maybe<A>, fb: Maybe<B>): Maybe<C>;
-	export function liftA3<A, B, C, D>(
-		f: (a: A, b: B, c: C) => D,
-		fa: Maybe<A>,
-		fb: Maybe<B>,
-		fc: Maybe<C>
-	): Maybe<D>;
-	export function liftA4<A, B, C, D, E>(
-		f: (a: A, b: B, c: C, d: D) => E,
-		fa: Maybe<A>,
-		fb: Maybe<B>,
-		fc: Maybe<C>,
-		fd: Maybe<D>
-	): Maybe<E>;
-}
