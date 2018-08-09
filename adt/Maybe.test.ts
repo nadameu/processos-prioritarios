@@ -1,15 +1,10 @@
-import { Just, Maybe, Nothing } from './Maybe';
-
+import { Just, Maybe, Nothing, sequenceA } from './Maybe';
+test('new Maybe()', () => {
+	expect(() => new Maybe()).toThrow();
+});
 test('Just()', () => {
 	const createJust = () => Just(42);
 	expect(createJust).not.toThrow();
-	expect(createJust()).toBeInstanceOf(Just);
-	expect(createJust()).toBeInstanceOf(Maybe);
-});
-test('new Just()', () => {
-	const createJust = () => new Just(42);
-	expect(createJust).not.toThrow();
-	expect(createJust()).toBeInstanceOf(Just);
 	expect(createJust()).toBeInstanceOf(Maybe);
 });
 test('Nothing', () => {
@@ -31,11 +26,9 @@ describe('Filterable', () => {
 		});
 	});
 	test('v.filter(x => false) == w.filter(x => false)', () => {
-		[[v, w], [v, Nothing], [Nothing, w], [Nothing, Nothing]].forEach(
-			([v, w]: Maybe<number>[]) => {
-				expect(v.filter(_ => false)).toEqual(w.filter(_ => false));
-			}
-		);
+		[[v, w], [v, Nothing], [Nothing, w], [Nothing, Nothing]].forEach(([v, w]: Maybe<number>[]) => {
+			expect(v.filter(_ => false)).toEqual(w.filter(_ => false));
+		});
 	});
 });
 describe('Functor', () => {
@@ -61,8 +54,7 @@ describe('Apply', () => {
 	const u = Just(g);
 	const v = Just(x);
 	const n = Nothing as Maybe<any>;
-	const helperFn = (_f: typeof f) => (_g: typeof g) => (_x: typeof x) =>
-		_f(_g(_x));
+	const helperFn = (_f: typeof f) => (_g: typeof g) => (_x: typeof x) => _f(_g(_x));
 	test('v.ap(u.ap(a.map(f => g => x => f(g(x))))) == v.ap(u).ap(a)', () => {
 		(<[Maybe<typeof x>, Maybe<typeof g>, Maybe<typeof f>][]>[
 			[v, u, a],
@@ -110,14 +102,7 @@ describe('Alt', () => {
 	const b = Nothing as Maybe<number>;
 	const c = Just(60) as Maybe<number>;
 	const f = (x: number) => x / 3;
-	const testSpace = [
-		[a, b, c],
-		[a, c, b],
-		[b, a, c],
-		[b, c, a],
-		[c, a, b],
-		[c, b, a],
-	];
+	const testSpace = [[a, b, c], [a, c, b], [b, a, c], [b, c, a], [c, a, b], [c, b, a]];
 	test(`a.alt(b).alt(c) == a.alt(b.alt(c))`, () => {
 		testSpace.forEach(([a, b, c]) => {
 			expect(a.alt(b).alt(c)).toEqual(a.alt(b.alt(c)));
@@ -226,9 +211,7 @@ describe('Traversable', () => {
 	const t = <T>(f: F<T>): G<T> => G.of(f.fVal);
 	test('t(u.traverse(F, x => x)) == u.traverse(G, t)', () => {
 		[mfn, Nothing].forEach(u => {
-			expect(t(u.traverse(F, x => x) as F<Maybe<number>>)).toEqual(
-				u.traverse(G, t)
-			);
+			expect(t(u.traverse(F, x => x) as F<Maybe<number>>)).toEqual(u.traverse(G, t));
 		});
 	});
 	test('u.traverse(F, F.of) == F.of(u)', () => {
@@ -247,16 +230,14 @@ describe('Traversable', () => {
 			);
 		});
 	});
-	test('t(M.sequenceA(F, u)) == M.sequenceA(G, u.map(t))', () => {
+	test('t(sequenceA(F, u)) == sequenceA(G, u.map(t))', () => {
 		[mfn, Nothing].forEach(u => {
-			expect(t(Maybe.sequenceA(F, u) as F<Maybe<number>>)).toEqual(
-				Maybe.sequenceA(G, u.map(t))
-			);
+			expect(t(sequenceA(F, u) as F<Maybe<number>>)).toEqual(sequenceA(G, u.map(t)));
 		});
 	});
-	test('M.sequenceA(F, u.map(F.of) == F.of(u)', () => {
+	test('sequenceA(F, u.map(F.of) == F.of(u)', () => {
 		[mfn, Nothing].forEach(u => {
-			expect(Maybe.sequenceA(F, u.map(F.of))).toEqual(F.of(u));
+			expect(sequenceA(F, u.map(F.of))).toEqual(F.of(u));
 		});
 	});
 });
@@ -279,12 +260,7 @@ describe('ChainRec', () => {
 		const d = Just;
 		const n = (v: number) => Just(v + 1);
 		const i = 0;
-		expect(
-			Maybe.chainRec(
-				(next, done, v) => (p(v) ? d(v).map(done) : n(v).map(next)),
-				i
-			)
-		).toEqual(
+		expect(Maybe.chainRec((next, done, v) => (p(v) ? d(v).map(done) : n(v).map(next)), i)).toEqual(
 			(function step(v): Maybe<number> {
 				return p(v) ? d(v) : n(v).chain(step);
 			})(i)
@@ -293,11 +269,8 @@ describe('ChainRec', () => {
 	test('m.constructor.chainRec(f, i)', () => {
 		const m = Just(42) as Maybe<number>;
 		const limit = 5;
-		const f = <I>(
-			next: (_: number) => I,
-			done: (_: number) => I,
-			v: number
-		): Maybe<I> => (v >= limit ? Just(v).map(done) : Just(v + 1).map(next));
+		const f = <I>(next: (_: number) => I, done: (_: number) => I, v: number): Maybe<I> =>
+			v >= limit ? Just(v).map(done) : Just(v + 1).map(next);
 		const i = 0;
 		[m, Nothing].forEach(m => {
 			expect(m.constructor.chainRec(f, i)).toEqual(Just(limit));
@@ -305,19 +278,15 @@ describe('ChainRec', () => {
 	});
 	test('Stack safety', () => {
 		const limit = 1e5;
-		const f = <I>(
-			next: (_: number) => I,
-			done: (_: number) => I,
-			v: number
-		): Maybe<I> => (v >= limit ? Just(v).map(done) : Just(v + 1).map(next));
+		const f = <I>(next: (_: number) => I, done: (_: number) => I, v: number): Maybe<I> =>
+			v >= limit ? Just(v).map(done) : Just(v + 1).map(next);
 		const i = 0;
 		expect(() => Maybe.chainRec(f, i)).not.toThrow();
 	});
 	test('function returns Nothing', () => {
 		expect(
 			Maybe.chainRec(
-				(next, done, v) =>
-					v < 0 ? Nothing : v > 50 ? Just(v).map(done) : Just(v - 1).map(next),
+				(next, done, v) => (v < 0 ? Nothing : v > 50 ? Just(v).map(done) : Just(v - 1).map(next)),
 				45
 			)
 		).toEqual(Nothing);

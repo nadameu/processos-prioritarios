@@ -1,4 +1,4 @@
-import { Identity } from './Identity';
+import { Identity, sequenceA } from './Identity';
 
 test('Identity()', () => {
 	const createIdentity = () => Identity(42);
@@ -127,13 +127,13 @@ describe('Traversable', () => {
 			)
 		);
 	});
-	test('t(M.sequenceA(F, u)) == M.sequenceA(G, u.map(t))', () => {
-		expect(t(Identity.sequenceA(F, idFNumber) as F<Identity<number>>)).toEqual(
-			Identity.sequenceA(G, idFNumber.map(t))
+	test('t(sequenceA(F, u)) == sequenceA(G, u.map(t))', () => {
+		expect(t(sequenceA(F, idFNumber) as F<Identity<number>>)).toEqual(
+			sequenceA(G, idFNumber.map(t))
 		);
 	});
-	test('M.sequenceA(F, u.map(F.of) == F.of(u)', () => {
-		expect(Identity.sequenceA(F, idNumber.map(F.of))).toEqual(F.of(idNumber));
+	test('sequenceA(F, u.map(F.of) == F.of(u)', () => {
+		expect(sequenceA(F, idNumber.map(F.of))).toEqual(F.of(idNumber));
 	});
 });
 describe('Chain', () => {
