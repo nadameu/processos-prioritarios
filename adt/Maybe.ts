@@ -1,10 +1,5 @@
-interface Applicative {
-	of<A>(_: A): Apply<A>;
-}
-interface Apply<A> {
-	ap<B>(that: Apply<(_: A) => B>): Apply<B>;
-	map<B>(f: (_: A) => B): Apply<B>;
-}
+import { Applicative, Apply } from './ADT';
+
 interface IMaybe<A> {
 	constructor: MaybeConstructor;
 	isNothing: boolean;
@@ -73,25 +68,19 @@ const Maybe$static = {
 		return Just(value);
 	},
 	sequenceA<A>(A: Applicative, maybe: Maybe<Apply<A>>) {
-		return maybe.isNothing
-			? A.of(Nothing as Maybe<A>)
-			: maybe.value.map(x => Just(x));
+		return maybe.isNothing ? A.of(Nothing as Maybe<A>) : maybe.value.map(x => Just(x));
 	},
 	zero() {
 		return Nothing;
 	},
 };
-export const Maybe: MaybeConstructor = Object.assign(function Maybe() {},
-Maybe$static);
-export const Just: JustConstructor = Object.assign(function Just<A>(
-	value: A
-): Just<A> {
+export const Maybe: MaybeConstructor = Object.assign(function Maybe() {}, Maybe$static);
+export const Just: JustConstructor = Object.assign(function Just<A>(value: A): Just<A> {
 	return Object.assign(Object.create(Just.prototype), {
 		isNothing: false,
 		value,
 	});
-},
-Maybe$static) as any;
+}, Maybe$static) as any;
 const Just$prototype = {
 	constructor: Just,
 	isJust: true,
@@ -116,11 +105,7 @@ const Just$prototype = {
 	reduce(this: Just<any>, f: Function, seed: any) {
 		return f(seed, this.value);
 	},
-	traverse<A, B>(
-		this: Just<A>,
-		_: Applicative,
-		f: (_: A) => Apply<B>
-	): Apply<Maybe<B>> {
+	traverse<A, B>(this: Just<A>, _: Applicative, f: (_: A) => Apply<B>): Apply<Maybe<B>> {
 		return f(this.value).map(b => Just(b));
 	},
 };
@@ -160,10 +145,7 @@ export const Nothing: Nothing = (function() {
 			return A.of(this);
 		},
 	};
-	Nothing.prototype = Object.assign(
-		Object.create(Maybe.prototype),
-		Nothing$prototype
-	);
+	Nothing.prototype = Object.assign(Object.create(Maybe.prototype), Nothing$prototype);
 	return Nothing();
 })();
 export type Maybe<A> = Just<A> | Nothing<A>;
