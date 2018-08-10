@@ -44,13 +44,14 @@
 		"ts-jest": "^23",
 		"ts-loader": "^4.4.1",
 		"ts-node": "^5.0.1",
-		"typescript": "^2.8.1",
+		"typescript": "^3.0.1",
 		"userscript-meta": "^1.0.1",
 		"webpack": "^4.3.0",
 		"webpack-cli": "^2.0.13",
 		"webpack-dev-server": "^3.1.1"
 	},
 	"dependencies": {
-		"intl": "^1.2.5"
+		"intl": "^1.2.5",
+		"remeda": "^0.0.4"
 	}
 }
