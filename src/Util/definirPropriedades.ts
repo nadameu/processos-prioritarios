@@ -1,18 +1,7 @@
 export function definirPropriedades(target: object, ...sources: object[]) {
-	sources.forEach(source => {
-		Object.defineProperties(
-			target,
-			Object.getOwnPropertyNames(source).reduce<PropertyDescriptorMap>(
-				(descriptors, key) => {
-					descriptors[key] = Object.getOwnPropertyDescriptor(
-						source,
-						key
-					) as PropertyDescriptor;
-					return descriptors;
-				},
-				{}
-			)
-		);
-	});
-	return target;
+  const sourceDescriptors = sources.map(source => Object.getOwnPropertyDescriptors(source));
+  for (const desc of sourceDescriptors) {
+    Object.defineProperties(target, desc);
+  }
+  return target;
 }
