@@ -1,5 +1,3 @@
 {
-	"editor.formatOnSave": true,
-	"typescript.tsdk": "node_modules\\typescript\\lib",
-	"jest.showCoverageOnLoad": true
+	"eslint.enable": true
 }
