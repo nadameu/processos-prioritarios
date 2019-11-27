@@ -1,4 +1,4 @@
-import { Just, Maybe, Nothing } from '../Maybe';
+import { Just, Maybe, Nothing } from 'adt-ts';
 
 export function queryOne<T extends Element>(selector: string, context: ParentNode): Maybe<T> {
   const elts = context.querySelectorAll<T>(selector);
