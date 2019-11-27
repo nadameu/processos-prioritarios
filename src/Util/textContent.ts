@@ -1,6 +1,7 @@
-import { Maybe } from '../../adt/Maybe';
-export function textContent(node: Node): Maybe<string> {
-  return Maybe.fromNullable(node.textContent)
-    .map(t => t.trim())
-    .filter(t => t !== '');
-}
+import { Maybe, maybe, pipe } from 'adt-ts';
+
+export const textContent: (node: Node) => Maybe<string> = pipe(
+  maybe.safeProp<Node, 'textContent'>('textContent'),
+  maybe.bindMethod('trim'),
+  maybe.filter(t => t !== '')
+);
