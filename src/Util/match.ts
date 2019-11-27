@@ -1,6 +1,3 @@
-import { Maybe } from '../../adt/Maybe';
-export function match(re: RegExp): (text: string) => Maybe<RegExpMatchArray> {
-  return function(text) {
-    return Maybe.fromNullable(text.match(re));
-  };
-}
+import { Maybe, maybe, pipe } from 'adt-ts';
+export const match = (re: RegExp): ((text: string) => Maybe<RegExpMatchArray>) =>
+  pipe(maybe.safeMethod('match', re));
