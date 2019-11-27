@@ -65,15 +65,16 @@ export class GUI {
       ),
       localizador.processos.filter(processo => processo.atraso < atrasoAVencer)
     ];
-    const baloes = prioridades.map((processos, indicePrioridade) => {
-      return `<span id="gmLocalizador${
-        localizador.id
-      }Prioridade${indicePrioridade}" class="gmProcessos gmPrioridade${indicePrioridade}${
-        processos.length > 0 ? '' : ' gmVazio'
-      }" onmouseover="infraTooltipMostrar(&quot;${
-        avisos[indicePrioridade]
-      }&quot;);" onmouseout="infraTooltipOcultar();">${processos.length}</span>`;
-    });
+    const baloes = prioridades.map(
+      (processos, indicePrioridade) =>
+        `<span id="gmLocalizador${
+          localizador.id
+        }Prioridade${indicePrioridade}" class="gmProcessos gmPrioridade${indicePrioridade}${
+          processos.length > 0 ? '' : ' gmVazio'
+        }" onmouseover="infraTooltipMostrar(&quot;${
+          avisos[indicePrioridade]
+        }&quot;);" onmouseout="infraTooltipOcultar();">${processos.length}</span>`
+    );
     const conteudo = [];
     if (!(localizador.sigla || localizador.nome)) {
       conteudo.push(localizador.siglaNome);

@@ -10,6 +10,7 @@ module.exports = {
     sourceType: 'module'
   },
   rules: {
+    'arrow-body-style': ['warn', 'as-needed'],
     'prettier/prettier': 'warn',
     'prefer-arrow-callback': 'warn',
     '@typescript-eslint/explicit-function-return-type': 'off',
