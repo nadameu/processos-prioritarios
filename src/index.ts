@@ -1,8 +1,6 @@
-import main from './main';
-import { either } from '../adt/Either';
+import { main } from './main';
 
-either(
-  e => console.error(e),
-  x => (x ? console.log('Resultado:', x) : undefined),
-  main(document)
+main().then(
+  x => console.log('Resultado:', x),
+  e => console.error(e)
 );
