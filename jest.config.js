@@ -1,4 +1,6 @@
+/** @type {jest.ProjectConfig} */
 module.exports = {
   preset: 'ts-jest',
-  testEnvironment: 'jsdom'
+  testEnvironment: 'jsdom',
+  transform: { '\\.[jt]s': ['ts-jest'] }
 };

@@ -11,6 +11,7 @@ module.exports = {
   },
   rules: {
     'arrow-body-style': ['warn', 'as-needed'],
+    'no-useless-escape': ['error'],
     'prettier/prettier': 'warn',
     'prefer-arrow-callback': 'warn',
     '@typescript-eslint/explicit-function-return-type': 'off',

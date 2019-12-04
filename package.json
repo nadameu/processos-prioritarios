@@ -7,15 +7,17 @@
   "author": "nadameu",
   "scripts": {
     "prebuild": "rimraf dist",
-    "build": "rollup -c",
+    "build": "rollup -c --environment BUILD:production",
     "lint": "eslint src/**/*.[jt]s",
     "lint:fix": "npm run lint -- --fix",
+    "start": "rollup -c -w --environment BUILD:development",
     "test": "jest",
     "type-check": "tsc"
   },
   "dependencies": {
     "adt-ts": "^0.3.1",
-    "cookies.js": "github:nadameu/cookies.js#v1.2.0"
+    "cookies.js": "github:nadameu/cookies.js#v1.2.0",
+    "jsx-dom": "^6.4.4"
   },
   "devDependencies": {
     "@types/jest": "^24.0.23",
@@ -25,11 +27,18 @@
     "eslint-config-prettier": "^6.7.0",
     "eslint-plugin-prettier": "^3.1.1",
     "jest": "^24.9.0",
+    "node-sass": "^4.13.0",
     "prettier": "^1.19.1",
     "rimraf": "^3.0.0",
     "rollup": "^1.27.5",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-postcss": "^2.0.3",
+    "rollup-plugin-serve": "^1.0.1",
+    "rollup-plugin-string": "^3.0.0",
+    "rollup-plugin-terser": "^5.1.2",
     "rollup-plugin-typescript": "^1.0.1",
     "ts-jest": "^24.2.0",
-    "typescript": "^3.7.2"
+    "typescript": "^3.7.2",
+    "userscript-meta": "^1.0.1"
   }
 }
