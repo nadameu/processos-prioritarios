@@ -16,6 +16,7 @@ const config = {
   output: {
     file: path.resolve(__dirname, 'dist', `${pkg.name}.user.js`),
     format: 'es',
+    banner: process.env.BUILD === 'development' && generateBanner(),
   },
 
   plugins: [
