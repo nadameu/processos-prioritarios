@@ -91,14 +91,13 @@ async function obterLocalizadoresOrgao() {
   );
   if (links.length !== 1)
     return Left('Link para a lista de localizadores do órgão não encontrado.');
-  "infraAcaoOrdenar('TotalProcessos','DESC','Infra');";
-  const url2 = links[0].href;
+  const url = links[0].href;
   const data = new FormData();
   data.append('hdnInfraCampoOrd', 'TotalProcessos');
   data.append('hdnInfraTipoOrd', 'DESC');
   data.append('hdnInfraPaginaAtual', '0');
   console.log('Buscando localizadores do órgão...');
-  const doc2 = await XHR(url2, 'POST', data);
+  const doc2 = await XHR(url, 'POST', data);
   return localizadoresFromOrgao(doc2);
 }
 
