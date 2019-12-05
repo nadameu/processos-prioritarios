@@ -1,3 +1,5 @@
+import escapeStringRegexp from 'escape-string-regexp';
+
 /**
  * @typedef Expr
  * @type {string | RegExp}
@@ -32,12 +34,7 @@ export function toSource(expr) {
  * @return {RegExp}
  */
 export function literal(text) {
-  const escaped = text
-    .replace(/\[/g, '\\[')
-    .replace(/\./g, '\\.')
-    .replace(/\^/g, '\\^')
-    .replace(/\?/g, '\\?');
-  return RegExp(escaped);
+  return RegExp(escapeStringRegexp(text));
 }
 
 /**
