@@ -9,13 +9,13 @@ import postcss from 'rollup-plugin-postcss';
 import { generateBanner } from './generateBanner.js';
 import { terser } from 'rollup-plugin-terser';
 
-export default {
-  input: 'src/index.ts',
+/** @type {import('rollup').RollupOptions} */
+const config = {
+  input: path.resolve(__dirname, 'src', 'index.ts'),
 
   output: {
     file: path.resolve(__dirname, 'dist', `${pkg.name}.user.js`),
     format: 'es',
-    banner: generateBanner()
   },
 
   plugins: [
@@ -44,3 +44,5 @@ export default {
       serve({ contentBase: 'dist', open: true, openPage: `/${pkg.name}.user.js` })
   ]
 };
+
+export default config;
