@@ -8,7 +8,7 @@ export function Left<a>(leftValue: a): Left<a> {
     isLeft: true,
     isRight: false,
     leftValue,
-    then: makeThen('reject', leftValue)
+    then: makeThen('reject', leftValue),
   };
 }
 
@@ -22,7 +22,7 @@ export function Right<b>(rightValue: b): Right<b> {
     isLeft: false,
     isRight: true,
     rightValue,
-    then: makeThen('resolve', rightValue)
+    then: makeThen('resolve', rightValue),
   };
 }
 

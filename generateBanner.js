@@ -8,6 +8,6 @@ export function generateBanner() {
     name: description,
     version,
     author,
-    ...data
+    ...data,
   });
 }

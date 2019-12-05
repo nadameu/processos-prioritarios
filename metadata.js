@@ -9,7 +9,7 @@ const include = concat(
     ...(process.env.BUILD === 'development'
       ? [
           concat('homologa-', oneOf('sc', '1g1'), '.trf4.jus.br/homologa_1g'),
-          'eproc-1g-develop.trf4.jus.br/eprocv2_pmj'
+          'eproc-1g-develop.trf4.jus.br/eprocv2_pmj',
         ]
       : [])
   ),
@@ -28,5 +28,5 @@ export default {
   name: 'Processos prioritários',
   namespace: 'http://nadameu.com.br/processos-prioritarios',
   include,
-  grant: 'none'
+  grant: 'none',
 };

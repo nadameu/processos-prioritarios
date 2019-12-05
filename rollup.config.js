@@ -32,17 +32,17 @@ const config = {
           sequences: false,
           unsafe: true,
           unsafe_arrows: true,
-          unsafe_methods: true
+          unsafe_methods: true,
         },
         mangle: false,
         output: {
           beautify: true,
-          preamble: generateBanner()
-        }
+          preamble: generateBanner(),
+        },
       }),
     process.env.BUILD === 'development' &&
-      serve({ contentBase: 'dist', open: true, openPage: `/${pkg.name}.user.js` })
-  ]
+      serve({ contentBase: 'dist', open: true, openPage: `/${pkg.name}.user.js` }),
+  ],
 };
 
 export default config;

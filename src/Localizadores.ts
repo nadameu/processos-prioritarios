@@ -5,7 +5,7 @@ import {
   localizadorFromLinhaOrgao,
   LocalizadorOrgao,
   MeuLocalizador,
-  MeuLocalizadorVazio
+  MeuLocalizadorVazio,
 } from './Localizador';
 import { query } from './query';
 

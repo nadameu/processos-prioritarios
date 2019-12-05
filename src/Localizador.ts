@@ -91,7 +91,7 @@ export function localizadorFromLinhaOrgao(linha: HTMLTableRowElement): Localizad
       descricao,
       sistema,
       lembrete,
-      quantidadeProcessos
+      quantidadeProcessos,
     };
   return null;
 }
