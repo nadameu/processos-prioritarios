@@ -17,7 +17,7 @@
   "dependencies": {
     "adt-ts": "^0.3.1",
     "cookies.js": "github:nadameu/cookies.js#v1.2.0",
-    "jsx-dom": "^6.4.4"
+    "preact": "^10.0.5"
   },
   "devDependencies": {
     "@types/jest": "^24.0.23",

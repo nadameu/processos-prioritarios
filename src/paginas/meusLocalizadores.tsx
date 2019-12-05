@@ -1,41 +1,50 @@
-// import './meusLocalizadores.scss';
-import * as React from 'jsx-dom';
+import * as preact from 'preact';
 import { Left } from '../Either';
-import {
-  localizadoresFromOrgao,
-  localizadoresFromPaginaCadastro,
-  localizadoresFromTabela
-} from '../Localizadores';
-import { query } from '../query';
-import { XHR } from '../XHR';
 import {
   MeuLocalizador,
   MeuLocalizadorVazio,
   siglaNomeIguais,
-  siglaNomeToTexto
+  siglaNomeToTexto,
 } from '../Localizador';
+import {
+  localizadoresFromOrgao,
+  localizadoresFromPaginaCadastro,
+  localizadoresFromTabela,
+} from '../Localizadores';
+import { query } from '../query';
+import { XHR } from '../XHR';
 
 export async function meusLocalizadores() {
   const barra = await query('#divInfraBarraComandosSuperior');
-  barra.insertAdjacentElement(
-    'afterend',
-    <div style={{ margin: '0 0 2em' }}>
-      <button
-        type="button"
-        onClick={() => obterDadosMeusLocalizadores().catch(e => console.error(e))}
-      >
-        Obter dados dos localizadores
-      </button>
-    </div>
+  const tabela = await query<HTMLTableElement>('table[summary="Tabela de Localizadores."]');
+  const render = makeRender({ barra, tabela });
+  render();
+}
+
+function makeRender({ barra, tabela }: { barra: Element; tabela: HTMLTableElement }) {
+  const container = document.createElement('div');
+  container.style.margin = '0 0 2em';
+  barra.insertAdjacentElement('afterend', container);
+  return () =>
+    preact.render(
+      Botao({ onClick: () => obterDadosMeusLocalizadores(tabela).catch(e => console.error(e)) }),
+      container
+    );
+}
+
+function Botao(props: { onClick: () => void }) {
+  return (
+    <button type="button" {...props}>
+      Obter dados dos localizadores
+    </button>
   );
 }
 
-async function obterDadosMeusLocalizadores() {
-  const tabela = await query<HTMLTableElement>('table[summary="Tabela de Localizadores."]');
+async function obterDadosMeusLocalizadores(tabela: HTMLTableElement) {
   const localizadores = await localizadoresFromTabela(tabela);
   const [meus, orgao] = await Promise.all([
     correlacionar(localizadores),
-    obterLocalizadoresOrgao()
+    obterLocalizadoresOrgao(),
   ]);
   const idsOrgao = new Map(orgao.map(({ id }, i) => [id, i]));
   const desativados = meus.filter(({ id }) => !idsOrgao.has(id));

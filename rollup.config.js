@@ -9,21 +9,27 @@ import postcss from 'rollup-plugin-postcss';
 import { generateBanner } from './generateBanner.js';
 import { terser } from 'rollup-plugin-terser';
 
+const isDevelopment = process.env.BUILD === 'development';
+const isProduction = process.env.BUILD === 'production';
+
 /** @type {import('rollup').RollupOptions} */
 const config = {
   input: path.resolve(__dirname, 'src', 'index.ts'),
 
+  external: ['preact'],
+
   output: {
     file: path.resolve(__dirname, 'dist', `${pkg.name}.user.js`),
-    format: 'es',
-    banner: process.env.BUILD === 'development' && generateBanner(),
+    format: 'iife',
+    banner: isDevelopment && generateBanner(),
+    globals: { preact: 'preact' },
   },
 
   plugins: [
     typescript(),
     resolve(),
     postcss(),
-    process.env.BUILD === 'production' &&
+    isProduction &&
       terser({
         ecma: 8,
         module: true,
@@ -41,8 +47,7 @@ const config = {
           preamble: generateBanner(),
         },
       }),
-    process.env.BUILD === 'development' &&
-      serve({ contentBase: 'dist', open: true, openPage: `/${pkg.name}.user.js` }),
+    isDevelopment && serve({ contentBase: 'dist', open: true, openPage: `/${pkg.name}.user.js` }),
   ],
 };
 
