@@ -3,23 +3,24 @@ module.exports = {
   extends: [
     'plugin:@typescript-eslint/recommended',
     'prettier/@typescript-eslint',
-    'plugin:prettier/recommended'
+    'plugin:prettier/recommended',
   ],
   parserOptions: {
     ecmaVersion: 2018,
-    sourceType: 'module'
+    sourceType: 'module',
   },
   rules: {
     'arrow-body-style': ['warn', 'as-needed'],
     'no-useless-escape': ['error'],
-    'prettier/prettier': 'warn',
+    'object-shorthand': ['warn'],
     'prefer-arrow-callback': 'warn',
+    'prettier/prettier': 'warn',
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-unused-vars': [
       'error',
-      { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
+      { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
     ],
-    '@typescript-eslint/no-use-before-define': ['error', 'nofunc']
-  }
+    '@typescript-eslint/no-use-before-define': ['error', 'nofunc'],
+  },
 };
