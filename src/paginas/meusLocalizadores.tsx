@@ -1,5 +1,7 @@
+import { pipe } from 'adt-ts';
 import * as preact from 'preact';
-import { Left } from '../Either';
+import { Either, Left, Right } from '../Either';
+import { List } from '../List';
 import {
   MeuLocalizador,
   MeuLocalizadorVazio,
@@ -12,6 +14,7 @@ import {
   localizadoresFromTabela,
 } from '../Localizadores';
 import { query } from '../query';
+import { queryAll } from '../queryAll';
 import { XHR } from '../XHR';
 
 export async function meusLocalizadores() {
@@ -25,11 +28,12 @@ function makeRender({ barra, tabela }: { barra: Element; tabela: HTMLTableElemen
   const container = document.createElement('div');
   container.style.margin = '0 0 2em';
   barra.insertAdjacentElement('afterend', container);
-  return () =>
-    preact.render(
-      Botao({ onClick: () => obterDadosMeusLocalizadores(tabela).catch(e => console.error(e)) }),
-      container
-    );
+
+  return () => preact.render(Botao({ onClick }), container);
+
+  function onClick() {
+    obterDadosMeusLocalizadores(tabela).catch(e => console.error(e));
+  }
 }
 
 function Botao(props: { onClick: () => void }) {
@@ -49,7 +53,7 @@ async function obterDadosMeusLocalizadores(tabela: HTMLTableElement) {
   const idsOrgao = new Map(orgao.map(({ id }, i) => [id, i]));
   const desativados = meus.filter(({ id }) => !idsOrgao.has(id));
   if (desativados.length > 0)
-    throw new Error(
+    return Left(
       `Localizadores desativados:\n${desativados
         .map(({ siglaNome }) => siglaNomeToTexto(siglaNome))
         .join('\n')}.`
@@ -61,16 +65,20 @@ async function obterDadosMeusLocalizadores(tabela: HTMLTableElement) {
 
 async function correlacionar(localizadores: Array<MeuLocalizador | MeuLocalizadorVazio>) {
   const cadastro = await obterLocalizadoresCadastro();
-  return localizadores.map(loc => {
-    const correspondencias = cadastro.filter(cad => siglaNomeIguais(loc.siglaNome, cad.siglaNome));
-    if (correspondencias.length !== 1)
-      throw new Error(
-        `Impossível achar localizador correspondente à sigla/nome ${siglaNomeToTexto(
-          loc.siglaNome
-        )}`
+  return Promise.all(
+    localizadores.map(loc => {
+      const correspondencias = cadastro.filter(cad =>
+        siglaNomeIguais(loc.siglaNome, cad.siglaNome)
       );
-    return correspondencias[0];
-  });
+      if (correspondencias.length !== 1)
+        return Left(
+          `Impossível achar localizador correspondente à sigla/nome ${siglaNomeToTexto(
+            loc.siglaNome
+          )}`
+        );
+      return Right(correspondencias[0]);
+    })
+  );
 }
 
 async function obterLocalizadoresCadastro() {
@@ -86,19 +94,20 @@ async function obterLocalizadoresCadastro() {
 
 async function obterLocalizadoresOrgao() {
   const menu = await query('[id="main-menu"]');
-  const links = Array.from(menu.querySelectorAll<HTMLAnchorElement>('a[href]')).filter(x =>
-    /\?acao=localizador_orgao_listar&/.test(x.href)
-  );
-  if (links.length !== 1)
-    return Left('Link para a lista de localizadores do órgão não encontrado.');
-  const url = links[0].href;
+  const url = await pipe(
+    () => queryAll<HTMLAnchorElement>('a[href]', menu),
+    List.map(link => link.href),
+    List.filter(url => /\?acao=localizador_orgao_listar&/.test(url)),
+    List.index(0),
+    Either.note('Link para a lista de localizadores do órgão não encontrado.')
+  )();
   const data = new FormData();
   data.append('hdnInfraCampoOrd', 'TotalProcessos');
   data.append('hdnInfraTipoOrd', 'DESC');
   data.append('hdnInfraPaginaAtual', '0');
   console.log('Buscando localizadores do órgão...');
-  const doc2 = await XHR(url, 'POST', data);
-  return localizadoresFromOrgao(doc2);
+  const doc = await XHR(url, 'POST', data);
+  return localizadoresFromOrgao(doc);
 }
 
 function toMap<a extends { id: string }>(array: a[]) {
