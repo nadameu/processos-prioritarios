@@ -54,7 +54,7 @@ export function localizadorFromLinhaCadastro(linha: HTMLTableRowElement): MeuLoc
 }
 
 export function localizadorFromLinhaOrgao(linha: HTMLTableRowElement): LocalizadorOrgao | null {
-  if (linha.cells.length !== 8) return nullify('length');
+  if (linha.cells.length !== 8) return null;
 
   // Id
   const checkbox = linha.cells[0].querySelector<HTMLInputElement>('input[type="checkbox"]');
@@ -91,10 +91,6 @@ export function localizadorFromLinhaOrgao(linha: HTMLTableRowElement): Localizad
       quantidadeProcessos,
     };
   return null;
-}
-
-function nullify(x: any) {
-  return x;
 }
 
 function siglaNomeFromTexto(texto: string) {
