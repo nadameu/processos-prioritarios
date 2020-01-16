@@ -1,22 +1,24 @@
-export interface LocalizadorOrgao extends MeuLocalizador {
-  descricao: string | null;
-  sistema: boolean;
-  lembrete: string | null;
-}
-export interface MeuLocalizador extends MeuLocalizadorVazio {
-  id: string;
-  quantidadeProcessos: number;
-}
-export interface MeuLocalizadorVazio {
-  siglaNome: SiglaNome;
-}
-
 export interface SiglaNomeSeparados {
   sigla: string;
   nome: string;
 }
 
 export type SiglaNome = string | SiglaNomeSeparados;
+
+export interface MeuLocalizadorVazio {
+  siglaNome: SiglaNome;
+}
+
+export interface MeuLocalizador extends MeuLocalizadorVazio {
+  id: string;
+  quantidadeProcessos: number;
+}
+
+export interface LocalizadorOrgao extends MeuLocalizador {
+  descricao: string | null;
+  sistema: boolean;
+  lembrete: string | null;
+}
 
 export type Localizador = MeuLocalizadorVazio | MeuLocalizador | LocalizadorOrgao;
 
