@@ -15,9 +15,9 @@ export interface MeuLocalizador extends MeuLocalizadorVazio {
 }
 
 export interface LocalizadorOrgao extends MeuLocalizador {
-  descricao: string | null;
+  descricao?: string;
   sistema: boolean;
-  lembrete: string | null;
+  lembrete?: string;
 }
 
 export type Localizador = MeuLocalizadorVazio | MeuLocalizador | LocalizadorOrgao;
@@ -67,7 +67,7 @@ export function localizadorFromLinhaOrgao(linha: HTMLTableRowElement): Localizad
   // Sigla, nome, descricao, sistema
   const sigla = linha.cells[1].textContent;
   const nome = linha.cells[2].textContent;
-  const descricao = linha.cells[3].textContent?.trim() || null;
+  const descricao = (linha.cells[3].textContent || '').trim() || undefined;
   const textoSistema = linha.cells[4].textContent || '';
   if (!/Sim|Não/.test(textoSistema)) return null;
   const sistema = textoSistema === 'Sim';
@@ -81,7 +81,7 @@ export function localizadorFromLinhaOrgao(linha: HTMLTableRowElement): Localizad
     linha.cells[7]
       .querySelector(`.memoLocalizadorOrgao${id}`)
       ?.getAttribute('onmouseover')
-      ?.match(/^return infraTooltipMostrar\('Obs: (.+) \/ .+?','',400\);$/)?.[1] ?? null;
+      ?.match(/^return infraTooltipMostrar\('Obs: (.+) \/ .+?','',400\);$/)?.[1] ?? undefined;
 
   if (sigla && nome)
     return {
