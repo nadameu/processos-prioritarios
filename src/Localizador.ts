@@ -1,5 +1,3 @@
-import { query } from './query';
-
 export interface LocalizadorOrgao extends MeuLocalizador {
   descricao: string | null;
   sistema: boolean;
@@ -59,9 +57,8 @@ export function localizadorFromLinhaOrgao(linha: HTMLTableRowElement): Localizad
   if (linha.cells.length !== 8) return nullify('length');
 
   // Id
-  const eitherCheckbox = query<HTMLInputElement>('input[type="checkbox"]', linha.cells[0]);
-  if (eitherCheckbox.isLeft) return null;
-  const { rightValue: checkbox } = eitherCheckbox;
+  const checkbox = linha.cells[0].querySelector<HTMLInputElement>('input[type="checkbox"]');
+  if (checkbox === null) return null;
   const id = checkbox.value.split('-')[0];
   if (!/\d{30}/.test(id)) return null;
 
@@ -86,7 +83,7 @@ export function localizadorFromLinhaOrgao(linha: HTMLTableRowElement): Localizad
 
   if (sigla && nome)
     return {
-      id: id,
+      id,
       siglaNome: { sigla, nome },
       descricao,
       sistema,

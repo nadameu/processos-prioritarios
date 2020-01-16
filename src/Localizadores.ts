@@ -1,4 +1,4 @@
-import { Either, Left, Right } from './Either';
+import { Either, Left, Right, E } from './Either';
 import {
   localizadorFromLinha,
   localizadorFromLinhaCadastro,
@@ -8,6 +8,7 @@ import {
   MeuLocalizadorVazio,
 } from './Localizador';
 import { query } from './query';
+import { pipeValue } from 'adt-ts';
 
 declare const isLocalizadores: unique symbol;
 export interface Localizadores {
@@ -28,34 +29,37 @@ export function localizadoresFromTabela(
 }
 
 export function localizadoresFromPaginaCadastro(doc: Document): Either<string, MeuLocalizador[]> {
-  const eitherTable = query<HTMLTableElement>('table#tblLocalizadorOrgao', doc);
-  if (eitherTable.isLeft) return eitherTable;
-  const { rightValue: table } = eitherTable;
-  const linhas = table.querySelectorAll<HTMLTableRowElement>('tr[class^="infraTr"]');
-  const localizadores = Array.from(linhas).map(localizadorFromLinhaCadastro);
-  const indicesErros = localizadores.reduceRight(
-    (acc: number[], x, i) => (x === null ? [i, ...acc] : acc),
-    []
+  return pipeValue(query<HTMLTableElement>('table#tblLocalizadorOrgao', doc)).pipe(
+    E.bind(table => {
+      const linhas = table.querySelectorAll<HTMLTableRowElement>('tr[class^="infraTr"]');
+      const localizadores = Array.from(linhas).map(localizadorFromLinhaCadastro);
+      const indicesErros = localizadores.reduceRight(
+        (acc: number[], x, i) => (x === null ? [i, ...acc] : acc),
+        []
+      );
+      if (indicesErros.length > 0)
+        return Left(`Erro(s) no(s) índice(s) ${indicesErros.join(', ')}.`);
+      return Right(localizadores as MeuLocalizador[]);
+    })
   );
-  if (indicesErros.length > 0) return Left(`Erro(s) no(s) índice(s) ${indicesErros.join(', ')}.`);
-  return Right(localizadores as MeuLocalizador[]);
 }
 
 export function localizadoresFromOrgao(doc: Document): Either<string, LocalizadorOrgao[]> {
-  const eitherTable = query<HTMLTableElement>(
-    'table[summary="Tabela de Localizadores do Órgão."]',
-    doc
+  return pipeValue(
+    query<HTMLTableElement>('table[summary="Tabela de Localizadores do Órgão."]', doc)
+  ).pipe(
+    E.bind(table => {
+      const linhas = table.querySelectorAll<HTMLTableRowElement>(
+        ':scope > tbody > tr[class^="infraTr"]'
+      );
+      const localizadores = Array.from(linhas).map(localizadorFromLinhaOrgao);
+      const indicesErros = localizadores.reduceRight(
+        (acc: number[], x, i) => (x === null ? [i, ...acc] : acc),
+        []
+      );
+      if (indicesErros.length > 0)
+        return Left(`Erro(s) no(s) índice(s) ${indicesErros.join(', ')}.`);
+      return Right(localizadores as LocalizadorOrgao[]);
+    })
   );
-  if (eitherTable.isLeft) return eitherTable;
-  const { rightValue: table } = eitherTable;
-  const linhas = table.querySelectorAll<HTMLTableRowElement>(
-    ':scope > tbody > tr[class^="infraTr"]'
-  );
-  const localizadores = Array.from(linhas).map(localizadorFromLinhaOrgao);
-  const indicesErros = localizadores.reduceRight(
-    (acc: number[], x, i) => (x === null ? [i, ...acc] : acc),
-    []
-  );
-  if (indicesErros.length > 0) return Left(`Erro(s) no(s) índice(s) ${indicesErros.join(', ')}.`);
-  return Right(localizadores as LocalizadorOrgao[]);
 }

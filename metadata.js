@@ -25,9 +25,9 @@ const include = concat(
 );
 
 export default {
-  name: 'Processos prioritários',
+  name: 'Processos prioritários (novo)',
   namespace: 'http://nadameu.com.br/processos-prioritarios',
   include,
-  require: 'https://unpkg.com/preact@10',
+  require: 'https://unpkg.com/preact@^10.0.0',
   grant: 'none',
 };

@@ -1,9 +1,12 @@
+import { Either, Left, Right } from './Either';
+import { Future } from './Future';
+
 export function XHR(
   url: string,
   method = 'GET',
   data: Parameters<XMLHttpRequest['send']>[0] = null
 ) {
-  return new Promise<Document>((res, rej) => {
+  return new Future<Either<string, Document>>(callback => {
     const xhr = new XMLHttpRequest();
     xhr.open(method, url);
     xhr.responseType = 'document';
@@ -11,11 +14,11 @@ export function XHR(
       if (xhr.readyState === XMLHttpRequest.DONE) {
         if (xhr.status >= 200 && xhr.status < 300) {
           if (typeof xhr.response === 'object' && xhr.response instanceof Document) {
-            res(xhr.response);
+            callback(Right(xhr.response));
           } else {
-            rej('Error: response is not an HTML document.');
+            callback(Left('Error: response is not an HTML document.'));
           }
-        } else rej(`Error: ${xhr.status}`);
+        } else callback(Left(`Error: ${xhr.status}`));
       }
     };
     xhr.send(data);
