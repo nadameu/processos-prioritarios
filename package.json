@@ -15,7 +15,6 @@
     "type-check": "tsc"
   },
   "dependencies": {
-    "adt-ts": "^0.3.1",
     "cookies.js": "github:nadameu/cookies.js#v1.2.0",
     "preact": "^10.0.5"
   },

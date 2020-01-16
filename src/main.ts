@@ -1,4 +1,3 @@
-import { Right } from './Either';
 import { meusLocalizadores } from './paginas/meusLocalizadores';
 
 export async function main() {
@@ -8,11 +7,11 @@ export async function main() {
   if (acao === 'usuario_tipo_monitoramento_localizador_listar') {
     return meusLocalizadores();
   } else if (acao === 'localizador_processos_lista') {
-    return Right('Nada a fazer.');
+    return 'Nada a fazer.';
   }
   const acaoOrigem = params.get('acao_origem');
   if (acaoOrigem === 'principal') {
-    return Right('Principal');
+    return 'Principal';
   }
   throw new Error(`Ação desconhecida: "${acao}".`);
 }

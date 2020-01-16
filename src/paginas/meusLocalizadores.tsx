@@ -1,7 +1,4 @@
-import { A, applicativeEither, pipeValue } from 'adt-ts';
 import * as preact from 'preact';
-import { E, Left, Right, sequenceObject } from '../Either';
-import * as F from '../Future';
 import {
   MeuLocalizador,
   MeuLocalizadorVazio,
@@ -17,15 +14,11 @@ import { query } from '../query';
 import { queryAll } from '../queryAll';
 import { XHR } from '../XHR';
 
-export function meusLocalizadores() {
-  return pipeValue({
-    barra: query('#divInfraBarraComandosSuperior'),
-    tabela: query<HTMLTableElement>('table[summary="Tabela de Localizadores."]'),
-  }).pipe(
-    sequenceObject,
-    E.map(makeRender),
-    E.map(render => render())
-  );
+export async function meusLocalizadores() {
+  const barra = await query('#divInfraBarraComandosSuperior');
+  const tabela = await query<HTMLTableElement>('table[summary="Tabela de Localizadores."]');
+  const render = makeRender({ barra, tabela });
+  render();
 }
 
 function makeRender({ barra, tabela }: { barra: Element; tabela: HTMLTableElement }) {
@@ -36,12 +29,9 @@ function makeRender({ barra, tabela }: { barra: Element; tabela: HTMLTableElemen
   return () => preact.render(Botao({ onClick }), container);
 
   function onClick() {
-    obterDadosMeusLocalizadores(tabela).then(
-      E.catchError(e => {
-        console.error(e);
-        return Right(undefined as void);
-      })
-    );
+    obterDadosMeusLocalizadores(tabela).catch(e => {
+      console.error(e);
+    });
   }
 }
 
@@ -53,94 +43,66 @@ function Botao(props: { onClick: () => void }) {
   );
 }
 
-function obterDadosMeusLocalizadores(tabela: HTMLTableElement) {
-  return pipeValue(tabela)
-    .pipe(
-      localizadoresFromTabela,
-      E.traverse(F.applicativeFuture)(localizadores =>
-        F.lift2(correlacionar(localizadores), obterLocalizadoresOrgao(), (meus, orgao) =>
-          sequenceObject({ meus, orgao })
-        )
-      )
-    )
-    .map(E.join)
-    .map(
-      E.bind(({ meus, orgao }) => {
-        const idsOrgao = new Map(orgao.map(({ id }, i) => [id, i]));
-        const desativados = meus.filter(({ id }) => !idsOrgao.has(id));
-        if (desativados.length > 0)
-          return Left(
-            `Localizadores desativados:\n${desativados
-              .map(({ siglaNome }) => siglaNomeToTexto(siglaNome))
-              .join('\n')}.`
-          );
-        const cadastro = toMap(meus);
-        // console.table(cadastro);
-        console.table(orgao.filter(({ id }) => cadastro.has(id)));
-        return Right(undefined as void);
-      })
+async function obterDadosMeusLocalizadores(tabela: HTMLTableElement) {
+  const meus = await correlacionar(await localizadoresFromTabela(tabela));
+  const orgao = await obterLocalizadoresOrgao();
+  const idsOrgao = new Map(orgao.map(({ id }, i) => [id, i]));
+  const desativados = meus.filter(({ id }) => !idsOrgao.has(id));
+  if (desativados.length > 0)
+    throw new Error(
+      `Localizadores desativados:\n${desativados
+        .map(({ siglaNome }) => siglaNomeToTexto(siglaNome))
+        .join('\n')}.`
     );
+  const cadastro = toMap(meus);
+  // console.table(cadastro);
+  console.table(orgao.filter(({ id }) => cadastro.has(id)));
 }
 
-function correlacionar(localizadores: Array<MeuLocalizador | MeuLocalizadorVazio>) {
-  return obterLocalizadoresCadastro().map(
-    E.bind(cadastro =>
-      pipeValue(localizadores).pipe(
-        A.traverse(applicativeEither)(loc => {
-          const correspondencias = cadastro.filter(cad =>
-            siglaNomeIguais(loc.siglaNome, cad.siglaNome)
-          );
-          if (correspondencias.length !== 1)
-            return Left(
-              `Impossível achar localizador correspondente à sigla/nome ${siglaNomeToTexto(
-                loc.siglaNome
-              )}`
-            );
-          return Right(correspondencias[0]);
-        })
-      )
-    )
+async function correlacionar(localizadores: Array<MeuLocalizador | MeuLocalizadorVazio>) {
+  const cadastro = await obterLocalizadoresCadastro();
+  return Promise.all(
+    localizadores.map(async loc => {
+      const correspondencias = cadastro.filter(cad =>
+        siglaNomeIguais(loc.siglaNome, cad.siglaNome)
+      );
+      if (correspondencias.length !== 1)
+        throw new Error(
+          `Impossível achar localizador correspondente à sigla/nome ${siglaNomeToTexto(
+            loc.siglaNome
+          )}`
+        );
+      return correspondencias[0];
+    })
   );
 }
 
-function obterLocalizadoresCadastro() {
-  return pipeValue(query('#btnNova'))
-    .pipe(
-      E.bind(btn => {
-        const onclick = btn.getAttribute('onclick') || '';
-        const matchUrl = onclick.match(/location.href='(.*)'/);
-        if (!matchUrl) return Left('URL não encontrada.');
-        const url = matchUrl[1];
-        console.log('Buscando localizadores cadastrados...');
-        return Right(url);
-      }),
-      E.traverse(F.applicativeFuture)(XHR)
-    )
-    .map(E.join)
-    .map(E.bind(localizadoresFromPaginaCadastro));
+async function obterLocalizadoresCadastro() {
+  const btn = await query('#btnNova');
+  const onclick = btn.getAttribute('onclick') || '';
+  const matchUrl = onclick.match(/location.href='(.*)'/);
+  if (!matchUrl) throw new Error('URL não encontrada.');
+  const url = matchUrl[1];
+  console.log('Buscando localizadores cadastrados...');
+  const doc = await XHR(url);
+  return localizadoresFromPaginaCadastro(doc);
 }
 
-function obterLocalizadoresOrgao() {
-  return pipeValue(query('[id="main-menu"]'))
-    .pipe(
-      E.bind(menu => {
-        const urls = queryAll<HTMLAnchorElement>('a[href]', menu)
-          .map(link => link.href)
-          .filter(url => /\?acao=localizador_orgao_listar&/.test(url));
-        if (urls.length !== 1)
-          return Left('Link para a lista de localizadores do órgão não encontrado.');
-        const url = urls[0];
-        const data = new FormData();
-        data.append('hdnInfraCampoOrd', 'TotalProcessos');
-        data.append('hdnInfraTipoOrd', 'DESC');
-        data.append('hdnInfraPaginaAtual', '0');
-        console.log('Buscando localizadores do órgão...');
-        return Right({ url, data });
-      }),
-      E.traverse(F.applicativeFuture)(({ url, data }) => XHR(url, 'POST', data))
-    )
-    .map(E.join)
-    .map(E.bind(localizadoresFromOrgao));
+async function obterLocalizadoresOrgao() {
+  const menu = await query('[id="main-menu"]');
+  const urls = queryAll<HTMLAnchorElement>('a[href]', menu)
+    .map(link => link.href)
+    .filter(url => /\?acao=localizador_orgao_listar&/.test(url));
+  if (urls.length !== 1)
+    throw new Error('Link para a lista de localizadores do órgão não encontrado.');
+  const url = urls[0];
+  const data = new FormData();
+  data.append('hdnInfraCampoOrd', 'TotalProcessos');
+  data.append('hdnInfraTipoOrd', 'DESC');
+  data.append('hdnInfraPaginaAtual', '0');
+  console.log('Buscando localizadores do órgão...');
+  const doc = await XHR(url, 'POST', data);
+  return localizadoresFromOrgao(doc);
 }
 
 function toMap<a extends { id: string }>(array: a[]) {
