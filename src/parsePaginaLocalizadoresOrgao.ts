@@ -23,16 +23,21 @@ function localizadorFromLinhaOrgao(linha: HTMLTableRowElement): LocalizadorOrgao
   if (!/\d{30}/.test(id)) return null;
 
   // Sigla, nome, descricao, sistema
-  const sigla = linha.cells[1].textContent;
-  const nome = linha.cells[2].textContent;
+  const sigla = linha.cells[1].textContent?.trim();
+  if (!sigla) return null;
+  const nome = linha.cells[2].textContent?.trim();
+  if (!nome) return null;
   const descricao = (linha.cells[3].textContent || '').trim() || undefined;
-  const textoSistema = linha.cells[4].textContent || '';
-  if (!/Sim|Não/.test(textoSistema)) return null;
-  const sistema = textoSistema === 'Sim';
+  const textoSistema = linha.cells[4].textContent?.trim();
+  const sistema = textoSistema === 'Sim' ? true : textoSistema === 'Não' ? false : null;
+  if (sistema === null) return null;
 
   // Quantidade de processos
   const quantidadeProcessos = Number(linha.cells[6].textContent);
   if (!Number.isInteger(quantidadeProcessos)) return null;
+
+  const url = linha.cells[6].querySelector<HTMLAnchorElement>('a[href]')?.href;
+  if (!url) return null;
 
   // Lembrete
   const lembrete =
@@ -41,14 +46,13 @@ function localizadorFromLinhaOrgao(linha: HTMLTableRowElement): LocalizadorOrgao
       ?.getAttribute('onmouseover')
       ?.match(/^return infraTooltipMostrar\('Obs: (.+) \/ .+?','',400\);$/)?.[1] ?? undefined;
 
-  if (sigla && nome)
-    return {
-      id,
-      siglaNome: { sigla, nome },
-      descricao,
-      sistema,
-      lembrete,
-      quantidadeProcessos,
-    };
-  return null;
+  return {
+    id,
+    url,
+    siglaNome: { sigla, nome },
+    descricao,
+    sistema,
+    lembrete,
+    quantidadeProcessos,
+  };
 }

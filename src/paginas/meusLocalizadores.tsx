@@ -1,28 +1,33 @@
-import * as preact from 'preact';
+import preact, { ComponentChildren } from 'preact';
 import { parsePaginaLocalizadoresOrgao } from '../parsePaginaLocalizadoresOrgao';
 import { parsePaginaCadastro } from '../parsePaginaCadastro';
 import { query } from '../query';
 import { queryAll } from '../queryAll';
 import { sequencePromisesObject } from '../sequencePromisesObject';
 import { XHR } from '../XHR';
-import { LocalizadorOrgao } from '../Localizador';
+import { LocalizadorOrgao, siglaNomeToTexto } from '../Localizador';
 import { todosNaoNulos } from '../todosNaoNulos';
+import './meusLocalizadores.scss';
+import { truthyKeys } from '../truthyKeys';
 
 export async function meusLocalizadores() {
-  const { barra, urlCadastro, urlLocalizadoresOrgao } = await sequencePromisesObject({
+  const { area, barra, urlCadastro, urlLocalizadoresOrgao } = await sequencePromisesObject({
+    area: query('#divInfraAreaTelaD'),
     barra: query('#divInfraBarraComandosSuperior'),
     urlCadastro: obterUrlCadastro(),
     urlLocalizadoresOrgao: obterUrlLocalizadoresOrgao(),
   });
-  const render = makeRender({ barra, urlCadastro, urlLocalizadoresOrgao });
+  const render = makeRender({ area, barra, urlCadastro, urlLocalizadoresOrgao });
   render();
 }
 
 function makeRender({
+  area,
   barra,
   urlCadastro,
   urlLocalizadoresOrgao,
 }: {
+  area: Element;
   barra: Element;
   urlCadastro: string;
   urlLocalizadoresOrgao: string;
@@ -35,6 +40,7 @@ function makeRender({
 
   function onClick() {
     obterDadosMeusLocalizadores({
+      area,
       urlCadastro,
       urlLocalizadoresOrgao,
     }).catch(e => {
@@ -52,9 +58,11 @@ function Botao(props: { onClick: () => void }) {
 }
 
 async function obterDadosMeusLocalizadores({
+  area,
   urlCadastro,
   urlLocalizadoresOrgao,
 }: {
+  area: Element;
   urlCadastro: string;
   urlLocalizadoresOrgao: string;
 }) {
@@ -69,15 +77,87 @@ async function obterDadosMeusLocalizadores({
   const localizadores = await todosNaoNulos(
     meus.map(id => (mapa.has(id) ? (mapa.get(id) as LocalizadorOrgao) : null))
   );
+  const localizadoresFiltrados = ocultarVazios
+    ? localizadores.filter(({ quantidadeProcessos }) => quantidadeProcessos > 0)
+    : localizadores;
   console.table(
-    localizadores
-      .filter(x => (ocultarVazios && x.quantidadeProcessos === 0 ? false : true))
-      .map(({ siglaNome: { nome }, sistema, descricao, quantidadeProcessos }) => ({
+    localizadoresFiltrados.map(
+      ({ siglaNome: { nome }, sistema, descricao, quantidadeProcessos }) => ({
         nome,
         sistema,
         descricao,
         quantidadeProcessos,
-      }))
+      })
+    )
+  );
+  while (area.firstChild) {
+    area.removeChild(area.firstChild);
+  }
+  preact.render(<TabelaLocalizadores dados={localizadoresFiltrados}></TabelaLocalizadores>, area);
+}
+
+function TabelaLocalizadores({ dados }: { dados: LocalizadorOrgao[] }) {
+  return (
+    <table class="infraTable gmTabelaLocalizadores">
+      <thead>
+        <tr>
+          <th class="infraTh">
+            Nome
+            <br />
+            <small>Descrição</small>
+          </th>
+          <th class="infraTh">Lembrete</th>
+          <th class="infraTh">Sistema</th>
+          <th class="infraTh">Qtd. processos</th>
+        </tr>
+      </thead>
+      <tbody>
+        {dados.map(loc => (
+          <LinhaLocalizador {...loc}></LinhaLocalizador>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function LinhaLocalizador({
+  id,
+  url,
+  siglaNome,
+  descricao,
+  lembrete,
+  sistema,
+  quantidadeProcessos,
+}: LocalizadorOrgao) {
+  return (
+    <tr class={truthyKeys({ infraTrClara: true, gmVazio: quantidadeProcessos === 0 })}>
+      <td>
+        <LinkLocalizador url={url}>{siglaNomeToTexto(siglaNome)}</LinkLocalizador>
+        <br />
+        {descricao ? <small>{descricao}</small> : null}
+      </td>
+      <td>
+        {lembrete ? (
+          <img
+            src="infra_css/imagens/balao.gif"
+            onMouseOver={() => (globalThis as any).infraTooltipMostrar(lembrete, 'Lembrete', 400)}
+            onMouseOut={() => (globalThis as any).infraTooltipOcultar()}
+          />
+        ) : null}
+      </td>
+      <td>{sistema ? 'Sim' : 'Não'}</td>
+      <td>
+        <LinkLocalizador url={url}>{String(quantidadeProcessos)}</LinkLocalizador>
+      </td>
+    </tr>
+  );
+}
+
+function LinkLocalizador({ url, children }: { children: string; url: string }) {
+  return (
+    <a href={url} target="_blank">
+      {children}
+    </a>
   );
 }
 

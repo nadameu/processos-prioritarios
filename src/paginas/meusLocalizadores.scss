@@ -3,3 +3,18 @@
     margin: 0 0 2em;
   }
 }
+.gmTabelaLocalizadores {
+  a[href] {
+    color: #319;
+    text-decoration: none;
+  }
+  small {
+    font-size: 0.9em;
+    color: #8f8797;
+  }
+  .gmVazio {
+    td {
+      opacity: 0.25;
+    }
+  }
+}

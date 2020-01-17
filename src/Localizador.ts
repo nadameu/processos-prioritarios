@@ -1,3 +1,5 @@
+import { nomeContemSigla } from './nomeContemSigla';
+
 export interface SiglaNomeSeparados {
   sigla: string;
   nome: string;
@@ -16,6 +18,7 @@ export interface MeuLocalizador extends MeuLocalizadorVazio {
 
 export interface LocalizadorOrgao {
   id: string;
+  url: string;
   siglaNome: SiglaNomeSeparados;
   descricao?: string;
   sistema: boolean;
@@ -30,5 +33,9 @@ export function siglaNomeIguais(x: SiglaNome, y: SiglaNome) {
 }
 
 export function siglaNomeToTexto(siglaNome: SiglaNome) {
-  return typeof siglaNome === 'string' ? siglaNome : `${siglaNome.sigla} - ${siglaNome.nome}`;
+  return typeof siglaNome === 'string'
+    ? siglaNome
+    : nomeContemSigla(siglaNome.sigla, siglaNome.nome)
+    ? siglaNome.nome
+    : `${siglaNome.sigla} - ${siglaNome.nome}`;
 }
