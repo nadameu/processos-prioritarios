@@ -2,6 +2,35 @@
   .gmDivBotao {
     margin: 0 0 2em;
   }
+  .summa-dies__botao {
+    --base-hue: 180;
+    border: 1px solid hsl(var(--base-hue), 40%, 50%);
+    border-radius: 4px;
+    display: grid;
+    grid-template: auto / auto auto;
+    grid-gap: 6px;
+    align-items: center;
+    padding: 6px;
+    background: hsl(var(--base-hue), 35%, 45%);
+    color: #fff;
+    font-family: Roboto, sans-serif;
+    font-size: 1.4em;
+    &:hover,
+    &:active,
+    &:focus {
+      border-color: hsl(var(--base-hue), 40%, 50%);
+      background: hsl(var(--base-hue), 40%, 35%);
+    }
+    &:active {
+      box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+    }
+  }
+  .summa-dies__logo {
+    width: 32px;
+  }
+  .summa-dies__logo__desenho {
+    fill: currentColor;
+  }
 }
 .gmTabelaLocalizadores {
   a[href] {
