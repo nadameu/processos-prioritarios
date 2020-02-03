@@ -1,14 +1,14 @@
-import preact, { ComponentChildren } from 'preact';
-import { parsePaginaLocalizadoresOrgao } from '../parsePaginaLocalizadoresOrgao';
+import * as preact from 'preact';
+import { LocalizadorOrgao } from '../Localizador';
 import { parsePaginaCadastro } from '../parsePaginaCadastro';
+import { parsePaginaLocalizadoresOrgao } from '../parsePaginaLocalizadoresOrgao';
 import { query } from '../query';
 import { queryAll } from '../queryAll';
 import { sequencePromisesObject } from '../sequencePromisesObject';
-import { XHR } from '../XHR';
-import { LocalizadorOrgao, siglaNomeToTexto } from '../Localizador';
 import { todosNaoNulos } from '../todosNaoNulos';
+import { XHR } from '../XHR';
 import './meusLocalizadores.scss';
-import { truthyKeys } from '../truthyKeys';
+import { TabelaLocalizadores } from './TabelaLocalizadores';
 
 export async function meusLocalizadores() {
   const { area, barra, urlCadastro, urlLocalizadoresOrgao } = await sequencePromisesObject({
@@ -94,71 +94,6 @@ async function obterDadosMeusLocalizadores({
     area.removeChild(area.firstChild);
   }
   preact.render(<TabelaLocalizadores dados={localizadoresFiltrados}></TabelaLocalizadores>, area);
-}
-
-function TabelaLocalizadores({ dados }: { dados: LocalizadorOrgao[] }) {
-  return (
-    <table class="infraTable gmTabelaLocalizadores">
-      <thead>
-        <tr>
-          <th class="infraTh">
-            Nome
-            <br />
-            <small>Descrição</small>
-          </th>
-          <th class="infraTh">Lembrete</th>
-          <th class="infraTh">Sistema</th>
-          <th class="infraTh">Qtd. processos</th>
-        </tr>
-      </thead>
-      <tbody>
-        {dados.map(loc => (
-          <LinhaLocalizador {...loc}></LinhaLocalizador>
-        ))}
-      </tbody>
-    </table>
-  );
-}
-
-function LinhaLocalizador({
-  id,
-  url,
-  siglaNome,
-  descricao,
-  lembrete,
-  sistema,
-  quantidadeProcessos,
-}: LocalizadorOrgao) {
-  return (
-    <tr class={truthyKeys({ infraTrClara: true, gmVazio: quantidadeProcessos === 0 })}>
-      <td>
-        <LinkLocalizador url={url}>{siglaNomeToTexto(siglaNome)}</LinkLocalizador>
-        <br />
-        {descricao ? <small>{descricao}</small> : null}
-      </td>
-      <td>
-        {lembrete ? (
-          <img
-            src="infra_css/imagens/balao.gif"
-            onMouseOver={() => (globalThis as any).infraTooltipMostrar(lembrete, 'Lembrete', 400)}
-            onMouseOut={() => (globalThis as any).infraTooltipOcultar()}
-          />
-        ) : null}
-      </td>
-      <td>{sistema ? 'Sim' : 'Não'}</td>
-      <td>
-        <LinkLocalizador url={url}>{String(quantidadeProcessos)}</LinkLocalizador>
-      </td>
-    </tr>
-  );
-}
-
-function LinkLocalizador({ url, children }: { children: string; url: string }) {
-  return (
-    <a href={url} target="_blank">
-      {children}
-    </a>
-  );
 }
 
 function obterIdsLocalizadoresCadastro(url: string) {
