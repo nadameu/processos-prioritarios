@@ -1,4 +1,4 @@
-import preact from 'preact';
+import * as preact from 'preact';
 import { LocalizadorOrgao, siglaNomeToTexto } from '../Localizador';
 import { truthyKeys } from '../truthyKeys';
 import { LinkLocalizador } from './LinkLocalizador';

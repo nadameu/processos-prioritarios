@@ -1,4 +1,4 @@
-import preact from 'preact';
+import * as preact from 'preact';
 import { LocalizadorOrgao } from '../Localizador';
 import { LinhaLocalizador } from './LinhaLocalizador';
 

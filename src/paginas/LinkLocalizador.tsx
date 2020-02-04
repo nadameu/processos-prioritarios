@@ -1,4 +1,4 @@
-import preact from 'preact';
+import * as preact from 'preact';
 
 export function LinkLocalizador({ url, children }: { children: string; url: string }) {
   return (
