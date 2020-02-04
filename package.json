@@ -8,7 +8,7 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "rollup -c --environment BUILD:production",
-    "lint": "eslint src/**/*.[jt]s",
+    "lint": "eslint src/**/*.[jt]s?(x)",
     "lint:fix": "npm run lint -- --fix",
     "start": "rollup -c -w --environment BUILD:development",
     "test": "jest",
@@ -25,7 +25,9 @@
     "escape-string-regexp": "^2.0.0",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.9.0",
+    "eslint-config-standard-preact": "^1.1.6",
     "eslint-plugin-prettier": "^3.1.2",
+    "idb": "^5.0.1",
     "jest": "^24.9.0",
     "node-sass": "^4.13.1",
     "prettier": "^1.19.1",

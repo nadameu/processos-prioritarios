@@ -2,6 +2,7 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   extends: [
     'plugin:@typescript-eslint/recommended',
+    'standard-preact',
     'prettier/@typescript-eslint',
     'plugin:prettier/recommended',
   ],
@@ -23,4 +24,5 @@ module.exports = {
     ],
     '@typescript-eslint/no-use-before-define': ['error', 'nofunc'],
   },
+  settings: { react: { pragma: 'preact' } },
 };
