@@ -124,6 +124,7 @@ function obterLocalizadoresOrgao(url: string) {
   data.append('hdnInfraCampoOrd', 'TotalProcessos');
   data.append('hdnInfraTipoOrd', 'DESC');
   data.append('hdnInfraPaginaAtual', '0');
+  data.append('chkOcultarSemProcesso', '0');
   logger.log('Buscando localizadores do órgão...');
   return XHR(url, 'POST', data).then(parsePaginaLocalizadoresOrgao);
 }
