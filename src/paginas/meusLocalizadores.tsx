@@ -12,6 +12,7 @@ import { TabelaLocalizadores } from '../componentes/TabelaLocalizadores';
 import { logger } from '../logger';
 import { Botao } from '../componentes/Botao';
 import { Aguarde } from '../componentes/Aguarde';
+import { MensagemErro } from '../componentes/MensagemErro';
 
 export async function meusLocalizadores() {
   const { area, formulario, urlCadastro, urlLocalizadoresOrgao } = await sequencePromisesObject({
@@ -51,11 +52,17 @@ function makeRender({
       )
       .catch((e: any) => {
         logger.error(e);
+        if (e instanceof Error) renderErro({ msg: e.message });
+        else renderErro({ msg: String(e) });
       });
   }
 
   async function renderAguarde() {
     preact.render(<Aguarde />, container);
+  }
+
+  async function renderErro({ msg }: { msg: string }) {
+    preact.render(<MensagemErro>{msg}</MensagemErro>, container);
   }
 }
 
