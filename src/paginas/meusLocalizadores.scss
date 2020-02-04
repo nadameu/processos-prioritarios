@@ -28,8 +28,12 @@
   .summa-dies__logo__desenho {
     fill: currentColor;
   }
-  .summa-dies__aguarde {
+  .summa-dies__aguarde,
+  .summa-dies__erro {
     font-size: 1.4em;
+  }
+  .summa-dies__erro {
+    color: red;
   }
 }
 .summa-dies__tabela {
