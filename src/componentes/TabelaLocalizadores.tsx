@@ -4,7 +4,7 @@ import { LinhaLocalizador } from './LinhaLocalizador';
 
 export function TabelaLocalizadores({ dados }: { dados: LocalizadorOrgao[] }) {
   return (
-    <table class="infraTable gmTabelaLocalizadores">
+    <table class="infraTable summa-dies__tabela">
       <thead>
         <tr>
           <th class="infraTh">

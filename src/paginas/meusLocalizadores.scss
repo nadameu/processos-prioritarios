@@ -28,8 +28,11 @@
   .summa-dies__logo__desenho {
     fill: currentColor;
   }
+  .summa-dies__aguarde {
+    font-size: 1.4em;
+  }
 }
-.gmTabelaLocalizadores {
+.summa-dies__tabela {
   a[href] {
     color: #319;
     text-decoration: none;
@@ -38,7 +41,7 @@
     font-size: 0.9em;
     color: #8f8797;
   }
-  .gmVazio {
+  .summa-dies__vazio {
     td {
       opacity: 0.25;
     }

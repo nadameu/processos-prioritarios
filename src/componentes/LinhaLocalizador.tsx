@@ -12,7 +12,7 @@ export function LinhaLocalizador({
   quantidadeProcessos,
 }: LocalizadorOrgao) {
   return (
-    <tr class={truthyKeys({ infraTrClara: true, gmVazio: quantidadeProcessos === 0 })}>
+    <tr class={truthyKeys({ infraTrClara: true, 'summa-dies__vazio': quantidadeProcessos === 0 })}>
       <td>
         <LinkLocalizador url={url}>{siglaNomeToTexto(siglaNome)}</LinkLocalizador>
         <br />

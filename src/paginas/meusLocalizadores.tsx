@@ -11,6 +11,7 @@ import './meusLocalizadores.scss';
 import { TabelaLocalizadores } from '../componentes/TabelaLocalizadores';
 import { logger } from '../logger';
 import { Botao } from '../componentes/Botao';
+import { Aguarde } from '../componentes/Aguarde';
 
 export async function meusLocalizadores() {
   const { area, formulario, urlCadastro, urlLocalizadoresOrgao } = await sequencePromisesObject({
@@ -37,16 +38,24 @@ function makeRender({
   const container = document.createElement('div');
   formulario.insertAdjacentElement('beforebegin', container);
 
-  return () => preact.render(Botao({ onClick }), container);
+  return () => preact.render(<Botao onClick={onClick} />, container);
 
   function onClick() {
-    obterDadosMeusLocalizadores({
-      area,
-      urlCadastro,
-      urlLocalizadoresOrgao,
-    }).catch(e => {
-      logger.error(e);
-    });
+    renderAguarde()
+      .then(() =>
+        obterDadosMeusLocalizadores({
+          area,
+          urlCadastro,
+          urlLocalizadoresOrgao,
+        })
+      )
+      .catch((e: any) => {
+        logger.error(e);
+      });
+  }
+
+  async function renderAguarde() {
+    preact.render(<Aguarde />, container);
   }
 }
 
