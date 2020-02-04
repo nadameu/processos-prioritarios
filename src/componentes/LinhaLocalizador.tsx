@@ -4,7 +4,6 @@ import { truthyKeys } from '../truthyKeys';
 import { LinkLocalizador } from './LinkLocalizador';
 
 export function LinhaLocalizador({
-  id,
   url,
   siglaNome,
   descricao,

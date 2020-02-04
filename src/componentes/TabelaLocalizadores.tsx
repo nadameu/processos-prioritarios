@@ -19,7 +19,7 @@ export function TabelaLocalizadores({ dados }: { dados: LocalizadorOrgao[] }) {
       </thead>
       <tbody>
         {dados.map(loc => (
-          <LinhaLocalizador {...loc}></LinhaLocalizador>
+          <LinhaLocalizador {...loc} />
         ))}
       </tbody>
     </table>
