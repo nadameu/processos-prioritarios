@@ -1,6 +1,7 @@
 import { main } from './main';
+import { logger } from './logger';
 
 main().then(
-  x => console.log('Resultado:', x),
-  e => console.error(e)
+  x => logger.log('Resultado:', x),
+  e => logger.error(e)
 );

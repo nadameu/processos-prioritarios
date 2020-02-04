@@ -9,6 +9,7 @@ import { todosNaoNulos } from '../todosNaoNulos';
 import { XHR } from '../XHR';
 import './meusLocalizadores.scss';
 import { TabelaLocalizadores } from './TabelaLocalizadores';
+import { logger } from '../logger';
 
 export async function meusLocalizadores() {
   const { area, formulario, urlCadastro, urlLocalizadoresOrgao } = await sequencePromisesObject({
@@ -43,7 +44,7 @@ function makeRender({
       urlCadastro,
       urlLocalizadoresOrgao,
     }).catch(e => {
-      console.error(e);
+      logger.error(e);
     });
   }
 }
@@ -85,7 +86,7 @@ async function obterDadosMeusLocalizadores({
   const localizadoresFiltrados = ocultarVazios
     ? localizadores.filter(({ quantidadeProcessos }) => quantidadeProcessos > 0)
     : localizadores;
-  console.table(
+  logger.table(
     localizadoresFiltrados.map(
       ({ siglaNome: { nome }, sistema, descricao, quantidadeProcessos }) => ({
         nome,
@@ -102,7 +103,7 @@ async function obterDadosMeusLocalizadores({
 }
 
 function obterIdsLocalizadoresCadastro(url: string) {
-  console.log('Buscando localizadores cadastrados...');
+  logger.log('Buscando localizadores cadastrados...');
   return XHR(url).then(parsePaginaCadastro);
 }
 
@@ -120,7 +121,7 @@ function obterLocalizadoresOrgao(url: string) {
   data.append('hdnInfraCampoOrd', 'TotalProcessos');
   data.append('hdnInfraTipoOrd', 'DESC');
   data.append('hdnInfraPaginaAtual', '0');
-  console.log('Buscando localizadores do órgão...');
+  logger.log('Buscando localizadores do órgão...');
   return XHR(url, 'POST', data).then(parsePaginaLocalizadoresOrgao);
 }
 
