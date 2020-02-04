@@ -1,6 +1,7 @@
 import { query } from './query';
 import { todosNaoNulos } from './todosNaoNulos';
 import { sequencePromisesObject } from './sequencePromisesObject';
+import { safePipe } from './safePipe';
 
 export interface DadosPaginaCadastro {
   ocultarVazios: boolean;
@@ -20,9 +21,12 @@ export async function parsePaginaCadastro(doc: Document): Promise<DadosPaginaCad
 
 function idFromLinhaCadastro(linha: HTMLTableRowElement): string | null {
   if (linha.cells.length !== 4) return null;
-  const id = linha.cells[0]
-    .querySelector('div:nth-child(2)')
-    ?.textContent?.match(/^.(\d{30})$/)?.[1];
-  if (id === undefined) return null;
-  return id;
+  return (
+    safePipe(
+      linha.cells[0].querySelector('div:nth-child(2)'),
+      x => x.textContent,
+      x => x.match(/^.(\d{30})$/),
+      x => x[1]
+    ) || null
+  );
 }
