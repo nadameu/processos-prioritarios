@@ -1,7 +1,7 @@
 import { LocalizadorOrgao } from './Localizador';
 import { query } from './query';
-import { todosNaoNulos } from './todosNaoNulos';
 import { safePipe } from './safePipe';
+import { todosNaoNulos } from './todosNaoNulos';
 
 export async function parsePaginaLocalizadoresOrgao(doc: Document): Promise<LocalizadorOrgao[]> {
   const tabela = await query<HTMLTableElement>(

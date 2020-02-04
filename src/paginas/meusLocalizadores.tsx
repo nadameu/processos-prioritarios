@@ -1,5 +1,10 @@
 import * as preact from 'preact';
+import { Aguarde } from '../componentes/Aguarde';
+import { Botao } from '../componentes/Botao';
+import { MensagemErro } from '../componentes/MensagemErro';
+import { TabelaLocalizadores } from '../componentes/TabelaLocalizadores';
 import { LocalizadorOrgao } from '../Localizador';
+import { logger } from '../logger';
 import { parsePaginaCadastro } from '../parsePaginaCadastro';
 import { parsePaginaLocalizadoresOrgao } from '../parsePaginaLocalizadoresOrgao';
 import { query } from '../query';
@@ -8,11 +13,6 @@ import { sequencePromisesObject } from '../sequencePromisesObject';
 import { todosNaoNulos } from '../todosNaoNulos';
 import { XHR } from '../XHR';
 import './meusLocalizadores.scss';
-import { TabelaLocalizadores } from '../componentes/TabelaLocalizadores';
-import { logger } from '../logger';
-import { Botao } from '../componentes/Botao';
-import { Aguarde } from '../componentes/Aguarde';
-import { MensagemErro } from '../componentes/MensagemErro';
 
 export async function meusLocalizadores() {
   const { area, formulario, urlCadastro, urlLocalizadoresOrgao } = await sequencePromisesObject({

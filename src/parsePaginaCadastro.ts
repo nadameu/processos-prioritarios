@@ -1,7 +1,7 @@
 import { query } from './query';
-import { todosNaoNulos } from './todosNaoNulos';
-import { sequencePromisesObject } from './sequencePromisesObject';
 import { safePipe } from './safePipe';
+import { sequencePromisesObject } from './sequencePromisesObject';
+import { todosNaoNulos } from './todosNaoNulos';
 
 export interface DadosPaginaCadastro {
   ocultarVazios: boolean;
