@@ -3,14 +3,12 @@ import { Aguarde } from '../componentes/Aguarde';
 import { Botao } from '../componentes/Botao';
 import { MensagemErro } from '../componentes/MensagemErro';
 import { TabelaLocalizadores } from '../componentes/TabelaLocalizadores';
-import { LocalizadorOrgao } from '../Localizador';
 import { logger } from '../logger';
 import { parsePaginaCadastro } from '../parsePaginaCadastro';
 import { parsePaginaLocalizadoresOrgao } from '../parsePaginaLocalizadoresOrgao';
 import { query } from '../query';
 import { queryAll } from '../queryAll';
 import { sequencePromisesObject } from '../sequencePromisesObject';
-import { todosNaoNulos } from '../todosNaoNulos';
 import { XHR } from '../XHR';
 import './meusLocalizadores.scss';
 
@@ -21,11 +19,10 @@ export async function meusLocalizadores() {
     urlCadastro: obterUrlCadastro(),
     urlLocalizadoresOrgao: obterUrlLocalizadoresOrgao(),
   });
-  const render = makeRender({ area, formulario, urlCadastro, urlLocalizadoresOrgao });
-  render();
+  render({ area, formulario, urlCadastro, urlLocalizadoresOrgao });
 }
 
-function makeRender({
+function render({
   area,
   formulario,
   urlCadastro,
@@ -39,55 +36,41 @@ function makeRender({
   const container = document.createElement('div');
   formulario.insertAdjacentElement('beforebegin', container);
 
-  return () => preact.render(<Botao onClick={onClick} />, container);
+  preact.render(<Botao onClick={onClick} />, container);
 
   function onClick() {
     preact.render(<Aguarde />, container);
-    obterDadosMeusLocalizadores({
-      urlCadastro,
-      urlLocalizadoresOrgao,
-    }).then(
-      dados => {
+    Promise.resolve()
+      .then(async () => {
+        const [{ ocultarVazios, ids: meus }, orgao] = await Promise.all([
+          XHR(urlCadastro).then(parsePaginaCadastro),
+          obterPaginaLocalizadoresOrgao(urlLocalizadoresOrgao).then(parsePaginaLocalizadoresOrgao),
+        ]);
+        const idsOrgao = new Set(orgao.map(({ id }) => id));
+        const meusLocalizadoresDesativados = meus.filter(id => !idsOrgao.has(id));
+        if (meusLocalizadoresDesativados.length > 0) {
+          throw new Error(
+            `Os seguintes localizadores foram desativados: ${meusLocalizadoresDesativados.join(
+              ', '
+            )}`
+          );
+        }
+        const idsMeusLocalizadores = new Set(meus);
+        const localizadores = orgao.filter(({ id }) => idsMeusLocalizadores.has(id));
+        const dados = ocultarVazios
+          ? localizadores.filter(({ quantidadeProcessos }) => quantidadeProcessos > 0)
+          : localizadores;
+        area.textContent = '';
         preact.render(<TabelaLocalizadores dados={dados} />, area);
-      },
-      (e: unknown) => {
+      })
+      .catch((e: unknown) => {
         logger.error(e);
         preact.render(
           <MensagemErro>{e instanceof Error ? e.message : String(e)}</MensagemErro>,
           container
         );
-      }
-    );
+      });
   }
-}
-
-async function obterDadosMeusLocalizadores({
-  urlCadastro,
-  urlLocalizadoresOrgao,
-}: {
-  urlCadastro: string;
-  urlLocalizadoresOrgao: string;
-}) {
-  const {
-    meus: { ocultarVazios, ids: meus },
-    orgao,
-  } = await sequencePromisesObject({
-    meus: obterIdsLocalizadoresCadastro(urlCadastro),
-    orgao: obterLocalizadoresOrgao(urlLocalizadoresOrgao),
-  });
-  const mapa = toMap(orgao);
-  const localizadores = await todosNaoNulos(
-    meus.map(id => (mapa.has(id) ? (mapa.get(id) as LocalizadorOrgao) : null))
-  );
-  const localizadoresFiltrados = ocultarVazios
-    ? localizadores.filter(({ quantidadeProcessos }) => quantidadeProcessos > 0)
-    : localizadores;
-  return localizadoresFiltrados;
-}
-
-function obterIdsLocalizadoresCadastro(url: string) {
-  logger.log('Buscando localizadores cadastrados...');
-  return XHR(url).then(parsePaginaCadastro);
 }
 
 async function obterUrlCadastro() {
@@ -99,14 +82,13 @@ async function obterUrlCadastro() {
   return url;
 }
 
-function obterLocalizadoresOrgao(url: string) {
+function obterPaginaLocalizadoresOrgao(url: string) {
   const data = new FormData();
   data.append('hdnInfraCampoOrd', 'TotalProcessos');
   data.append('hdnInfraTipoOrd', 'DESC');
   data.append('hdnInfraPaginaAtual', '0');
   data.append('chkOcultarSemProcesso', '0');
-  logger.log('Buscando localizadores do órgão...');
-  return XHR(url, 'POST', data).then(parsePaginaLocalizadoresOrgao);
+  return XHR(url, 'POST', data);
 }
 
 async function obterUrlLocalizadoresOrgao() {
@@ -118,8 +100,4 @@ async function obterUrlLocalizadoresOrgao() {
     throw new Error('Link para a lista de localizadores do órgão não encontrado.');
   const url = urls[0];
   return url;
-}
-
-function toMap<a extends { id: string }>(array: a[]) {
-  return new Map(array.map(x => [x.id, x]));
 }
