@@ -42,36 +42,29 @@ function makeRender({
   return () => preact.render(<Botao onClick={onClick} />, container);
 
   function onClick() {
-    renderAguarde()
-      .then(() =>
-        obterDadosMeusLocalizadores({
-          area,
-          urlCadastro,
-          urlLocalizadoresOrgao,
-        })
-      )
-      .catch((e: any) => {
-        logger.error(e);
-        if (e instanceof Error) renderErro({ msg: e.message });
-        else renderErro({ msg: String(e) });
-      });
-  }
-
-  async function renderAguarde() {
     preact.render(<Aguarde />, container);
-  }
-
-  async function renderErro({ msg }: { msg: string }) {
-    preact.render(<MensagemErro>{msg}</MensagemErro>, container);
+    obterDadosMeusLocalizadores({
+      urlCadastro,
+      urlLocalizadoresOrgao,
+    }).then(
+      dados => {
+        preact.render(<TabelaLocalizadores dados={dados} />, area);
+      },
+      (e: unknown) => {
+        logger.error(e);
+        preact.render(
+          <MensagemErro>{e instanceof Error ? e.message : String(e)}</MensagemErro>,
+          container
+        );
+      }
+    );
   }
 }
 
 async function obterDadosMeusLocalizadores({
-  area,
   urlCadastro,
   urlLocalizadoresOrgao,
 }: {
-  area: Element;
   urlCadastro: string;
   urlLocalizadoresOrgao: string;
 }) {
@@ -89,20 +82,7 @@ async function obterDadosMeusLocalizadores({
   const localizadoresFiltrados = ocultarVazios
     ? localizadores.filter(({ quantidadeProcessos }) => quantidadeProcessos > 0)
     : localizadores;
-  logger.table(
-    localizadoresFiltrados.map(
-      ({ siglaNome: { nome }, sistema, descricao, quantidadeProcessos }) => ({
-        nome,
-        sistema,
-        descricao,
-        quantidadeProcessos,
-      })
-    )
-  );
-  while (area.firstChild) {
-    area.removeChild(area.firstChild);
-  }
-  preact.render(<TabelaLocalizadores dados={localizadoresFiltrados} />, area);
+  return localizadoresFiltrados;
 }
 
 function obterIdsLocalizadoresCadastro(url: string) {
