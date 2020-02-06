@@ -1,9 +1,9 @@
+import { Either, Left, Right } from './Either';
+
 export function query<T extends Element>(
   selector: string,
   parent: ParentNode = document
-): Promise<T> {
+): Either<Error, T> {
   const el = parent.querySelector<T>(selector);
-  return el === null
-    ? Promise.reject(`Elemento não encontrado: '${selector}'.`)
-    : Promise.resolve(el);
+  return el === null ? Left(new Error(`Elemento não encontrado: '${selector}'.`)) : Right(el);
 }
