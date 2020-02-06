@@ -1,5 +1,3 @@
-import { Object$sequenceArray } from './Object$sequenceArray';
-
 type SequencePromisesObjectResult<T> = {
   [key in keyof T]: T[key] extends Thenable<infer U> ? U : T[key];
 };

@@ -1,16 +1,9 @@
 import * as preact from 'preact';
+import { Array$traverseObject } from '../Array$traverseObject';
 import { Aguarde } from '../componentes/Aguarde';
 import { Botao } from '../componentes/Botao';
 import { MensagemErro } from '../componentes/MensagemErro';
 import { TabelaLocalizadores } from '../componentes/TabelaLocalizadores';
-import {
-  Either,
-  Left,
-  partition,
-  Right,
-  sequenceValidations,
-  sequenceValidationsObject,
-} from '../Either';
 import { LocalizadorOrgao } from '../Localizador';
 import { logger } from '../logger';
 import { query } from '../query';
@@ -22,13 +15,12 @@ import { parsePaginaLocalizadoresOrgao } from './localizadoresOrgao';
 import './meusLocalizadores.scss';
 
 export async function meusLocalizadores() {
-  const { area, formulario, urlCadastro, urlLocalizadoresOrgao } = await sequenceValidationsObject({
-    area: query('#divInfraAreaTelaD'),
-    formulario: query('#frmLocalizadorLista'),
-    urlCadastro: query('#btnNova').chain(obterUrlCadastro),
-    urlLocalizadoresOrgao: query('[id="main-menu"]').chain(obterUrlLocalizadoresOrgao),
+  render({
+    area: await query('#divInfraAreaTelaD'),
+    formulario: await query('#frmLocalizadorLista'),
+    urlCadastro: await query('#btnNova').then(obterUrlCadastro),
+    urlLocalizadoresOrgao: await query('[id="main-menu"]').then(obterUrlLocalizadoresOrgao),
   });
-  render({ area, formulario, urlCadastro, urlLocalizadoresOrgao });
 }
 
 function render({
@@ -55,24 +47,24 @@ function render({
           new XHR(urlCadastro),
           obterPaginaLocalizadoresOrgao(urlLocalizadoresOrgao),
         ]);
-        const [{ ocultarVazios, localizadores: meus }, orgao] = await sequenceValidations([
-          parsePaginaCadastroMeusLocalizadores(paginaCadastroMeusLocalizadores),
-          parsePaginaLocalizadoresOrgao(paginaLocalizadoresOrgao),
-        ]);
-        const idsOrgao = new Map(orgao.map(loc => [loc.id, loc]));
-        const { left: desativados, right: localizadores } = partition(
-          meus.map(({ id, siglaNome }) =>
-            idsOrgao.has(id) ? Right(idsOrgao.get(id) as LocalizadorOrgao) : Left(siglaNome)
-          )
+        const { ocultarVazios, localizadores: meus } = await parsePaginaCadastroMeusLocalizadores(
+          paginaCadastroMeusLocalizadores
         );
-        if (desativados.length > 0) {
-          return Left(
-            new Error(`Os seguintes localizadores foram desativados: ${desativados.join(', ')}`)
+        const orgao = await parsePaginaLocalizadoresOrgao(paginaLocalizadoresOrgao);
+        const idsOrgao = new Map(orgao.map(loc => [loc.id, loc]));
+        const { desativados, localizadores } = Array$traverseObject(meus, ({ id, siglaNome }) =>
+          idsOrgao.has(id)
+            ? { localizadores: idsOrgao.get(id) as LocalizadorOrgao }
+            : { desativados: siglaNome }
+        );
+        if (desativados) {
+          throw new Error(
+            `Os seguintes localizadores foram desativados: ${desativados.join(', ')}`
           );
         }
         const dados = ocultarVazios
-          ? localizadores.filter(({ quantidadeProcessos }) => quantidadeProcessos > 0)
-          : localizadores;
+          ? localizadores!.filter(({ quantidadeProcessos }) => quantidadeProcessos > 0)
+          : localizadores!;
         area.textContent = '';
         preact.render(<TabelaLocalizadores dados={dados} />, area);
       })
@@ -86,14 +78,14 @@ function render({
   }
 }
 
-function obterUrlCadastro(btn: Element): Either<Error, string> {
+async function obterUrlCadastro(btn: Element): Promise<string> {
   const url = safePipe(
     btn.getAttribute('onclick'),
     x => x.match(/location.href='(.*)'/),
     x => x[1]
   );
-  if (!url) return Left(new Error('URL não encontrada.'));
-  return Right(url);
+  if (!url) throw new Error('URL não encontrada.');
+  return url;
 }
 
 function obterPaginaLocalizadoresOrgao(url: string) {
@@ -105,11 +97,11 @@ function obterPaginaLocalizadoresOrgao(url: string) {
   return new XHR(url, 'POST', data);
 }
 
-function obterUrlLocalizadoresOrgao(menu: Element): Either<Error, string> {
+async function obterUrlLocalizadoresOrgao(menu: Element): Promise<string> {
   const urls = queryAll<HTMLAnchorElement>('a[href]', menu)
     .map(link => link.href)
     .filter(url => /\?acao=localizador_orgao_listar&/.test(url));
   if (urls.length !== 1)
-    return Left(new Error('Link para a lista de localizadores do órgão não encontrado.'));
-  return Right(urls[0]);
+    throw new Error('Link para a lista de localizadores do órgão não encontrado.');
+  return urls[0];
 }

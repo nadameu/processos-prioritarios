@@ -1,4 +1,4 @@
-import { Object$sequenceArray } from './Object$sequenceArray';
+import { Array$sequenceObject } from './Array$sequenceObject';
 
 export function Promise$allErrors<a, b, c, d, e, f, g, h, i, j>(
   values: readonly [
