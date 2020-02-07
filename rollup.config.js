@@ -1,13 +1,15 @@
 /* eslint-disable @typescript-eslint/camelcase */
+
 import path from 'path';
 import serve from 'rollup-plugin-serve';
 import typescript from 'rollup-plugin-typescript';
 import pkg from './package.json';
 import resolve from 'rollup-plugin-node-resolve';
-// import string from 'rollup-plugin-string';
+import { string } from 'rollup-plugin-string';
 import postcss from 'rollup-plugin-postcss';
 import { generateBanner } from './generateBanner.js';
 import { terser } from 'rollup-plugin-terser';
+import prettier from 'rollup-plugin-prettier';
 
 const isDevelopment = process.env.BUILD === 'development';
 const isProduction = process.env.BUILD === 'production';
@@ -28,6 +30,7 @@ const config = {
   plugins: [
     typescript(),
     resolve(),
+    string({ include: '*.svg' }),
     postcss(),
     isProduction &&
       terser({
@@ -43,10 +46,10 @@ const config = {
         },
         mangle: false,
         output: {
-          beautify: true,
           preamble: generateBanner(),
         },
       }),
+    prettier(),
     isDevelopment && serve({ contentBase: 'dist', open: true, openPage: `/${pkg.name}.user.js` }),
   ],
 };
