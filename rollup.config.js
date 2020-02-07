@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/camelcase */
 
 import path from 'path';
-import serve from 'rollup-plugin-serve';
-import typescript from 'rollup-plugin-typescript';
-import pkg from './package.json';
 import resolve from 'rollup-plugin-node-resolve';
-import { string } from 'rollup-plugin-string';
 import postcss from 'rollup-plugin-postcss';
-import { generateBanner } from './generateBanner.js';
-import { terser } from 'rollup-plugin-terser';
 import prettier from 'rollup-plugin-prettier';
+import serve from 'rollup-plugin-serve';
+import { string } from 'rollup-plugin-string';
+import { terser } from 'rollup-plugin-terser';
+import typescript from 'rollup-plugin-typescript';
+import { generateBanner } from './generateBanner.js';
+import pkg from './package.json';
 
 const isDevelopment = process.env.BUILD === 'development';
 const isProduction = process.env.BUILD === 'production';
