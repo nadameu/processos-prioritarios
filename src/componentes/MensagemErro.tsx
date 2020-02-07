@@ -1,5 +1,5 @@
 import * as preact from 'preact';
 
-export function MensagemErro({ children }: { children: string }) {
-  return <p class="summa-dies__erro">{children}</p>;
-}
+export const MensagemErro: preact.FunctionComponent<{ mensagem: string }> = ({ mensagem }) => (
+  <p class="summa-dies__erro">{mensagem}</p>
+);

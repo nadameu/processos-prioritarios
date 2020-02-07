@@ -29,7 +29,7 @@ export const Botao: preact.FunctionComponent<{
 
   async function onClick() {
     try {
-      preact.render(<Aguarde />, container);
+      preact.render(Aguarde({}), container);
       const [{ ocultarVazios, localizadores: meus }, orgao] = await Cancelable.all([
         XHR(urlCadastro).then(parsePaginaCadastroMeusLocalizadores),
         obterPaginaLocalizadoresOrgao(urlLocalizadoresOrgao).then(parsePaginaLocalizadoresOrgao),
@@ -47,11 +47,11 @@ export const Botao: preact.FunctionComponent<{
         ? localizadores!.filter(({ quantidadeProcessos }) => quantidadeProcessos > 0)
         : localizadores!;
       container.textContent = '';
-      preact.render(<TabelaLocalizadores dados={dados} />, areaTabela, tabela);
+      preact.render(TabelaLocalizadores({ dados }), areaTabela, tabela);
     } catch (e) {
       logger.error(e);
       preact.render(
-        <MensagemErro>{e instanceof Error ? e.message : String(e)}</MensagemErro>,
+        MensagemErro({ mensagem: e instanceof Error ? e.message : String(e) }),
         container
       );
     }
