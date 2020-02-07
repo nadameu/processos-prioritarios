@@ -1,5 +1,3 @@
-import { Promise$allErrors } from './Promise$allErrors';
-
 type Status =
   | { type: 'NOT STARTED' }
   | { type: 'PENDING'; xhr: XMLHttpRequest }
