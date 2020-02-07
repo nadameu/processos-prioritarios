@@ -8,6 +8,10 @@ export async function main() {
     return meusLocalizadores();
   } else if (acao === 'localizador_processos_lista') {
     return 'Nada a fazer.';
+  } else if (acao === 'relatorio_geral_listar') {
+    return 'Nada a fazer.';
+  } else if (acao === 'localizador_orgao_listar') {
+    return 'Nada a fazer.';
   }
   const acaoOrigem = params.get('acao_origem');
   if (acaoOrigem === 'principal') {
