@@ -1,5 +1,6 @@
 import * as preact from 'preact';
 import { Array$traverseObject } from '../Array$traverseObject';
+import { Cancelable } from '../Cancelable';
 import { Aguarde } from '../componentes/Aguarde';
 import { Botao } from '../componentes/Botao';
 import { MensagemErro } from '../componentes/MensagemErro';
@@ -9,7 +10,7 @@ import { logger } from '../logger';
 import { query } from '../query';
 import { queryAll } from '../queryAll';
 import { safePipe } from '../safePipe';
-import { sequenceXHR, XHR } from '../XHR';
+import { XHR } from '../XHR';
 import { parsePaginaCadastroMeusLocalizadores } from './cadastroMeusLocalizadores';
 import { parsePaginaLocalizadoresOrgao } from './localizadoresOrgao';
 import './meusLocalizadores.scss';
@@ -39,42 +40,34 @@ function render({
 
   preact.render(<Botao onClick={onClick} />, container);
 
-  function onClick() {
-    Promise.resolve()
-      .then(async () => {
-        preact.render(<Aguarde />, container);
-        const [paginaCadastroMeusLocalizadores, paginaLocalizadoresOrgao] = await sequenceXHR([
-          new XHR(urlCadastro),
-          obterPaginaLocalizadoresOrgao(urlLocalizadoresOrgao),
-        ]);
-        const { ocultarVazios, localizadores: meus } = await parsePaginaCadastroMeusLocalizadores(
-          paginaCadastroMeusLocalizadores
-        );
-        const orgao = await parsePaginaLocalizadoresOrgao(paginaLocalizadoresOrgao);
-        const idsOrgao = new Map(orgao.map(loc => [loc.id, loc]));
-        const { desativados, localizadores } = Array$traverseObject(meus, ({ id, siglaNome }) =>
-          idsOrgao.has(id)
-            ? { localizadores: idsOrgao.get(id) as LocalizadorOrgao }
-            : { desativados: siglaNome }
-        );
-        if (desativados) {
-          throw new Error(
-            `Os seguintes localizadores foram desativados: ${desativados.join(', ')}`
-          );
-        }
-        const dados = ocultarVazios
-          ? localizadores!.filter(({ quantidadeProcessos }) => quantidadeProcessos > 0)
-          : localizadores!;
-        area.textContent = '';
-        preact.render(<TabelaLocalizadores dados={dados} />, area);
-      })
-      .catch((e: unknown) => {
-        logger.error(e);
-        preact.render(
-          <MensagemErro>{e instanceof Error ? e.message : String(e)}</MensagemErro>,
-          container
-        );
-      });
+  async function onClick() {
+    try {
+      preact.render(<Aguarde />, container);
+      const [{ ocultarVazios, localizadores: meus }, orgao] = await Cancelable.all([
+        XHR(urlCadastro).then(parsePaginaCadastroMeusLocalizadores),
+        obterPaginaLocalizadoresOrgao(urlLocalizadoresOrgao).then(parsePaginaLocalizadoresOrgao),
+      ]);
+      const idsOrgao = new Map(orgao.map(loc => [loc.id, loc]));
+      const { desativados, localizadores } = Array$traverseObject(meus, ({ id, siglaNome }) =>
+        idsOrgao.has(id)
+          ? { localizadores: idsOrgao.get(id) as LocalizadorOrgao }
+          : { desativados: siglaNome }
+      );
+      if (desativados) {
+        throw new Error(`Os seguintes localizadores foram desativados: ${desativados.join(', ')}`);
+      }
+      const dados = ocultarVazios
+        ? localizadores!.filter(({ quantidadeProcessos }) => quantidadeProcessos > 0)
+        : localizadores!;
+      area.textContent = '';
+      preact.render(<TabelaLocalizadores dados={dados} />, area);
+    } catch (e) {
+      logger.error(e);
+      preact.render(
+        <MensagemErro>{e instanceof Error ? e.message : String(e)}</MensagemErro>,
+        container
+      );
+    }
   }
 }
 
@@ -94,7 +87,7 @@ function obterPaginaLocalizadoresOrgao(url: string) {
   data.append('hdnInfraTipoOrd', 'DESC');
   data.append('hdnInfraPaginaAtual', '0');
   data.append('chkOcultarSemProcesso', '0');
-  return new XHR(url, 'POST', data);
+  return XHR(url, 'POST', data);
 }
 
 async function obterUrlLocalizadoresOrgao(menu: Element): Promise<string> {
