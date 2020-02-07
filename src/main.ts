@@ -7,12 +7,15 @@ export async function main() {
   if (acao === 'usuario_tipo_monitoramento_localizador_listar') {
     return meusLocalizadores();
   } else if (acao === 'localizador_processos_lista') {
+    return;
   } else if (acao === 'relatorio_geral_listar') {
+    return;
   } else if (acao === 'localizador_orgao_listar') {
+    return;
   }
   const acaoOrigem = params.get('acao_origem');
   if (acaoOrigem === 'principal') {
-    return 'Principal';
+    return;
   }
   throw new Error(`Ação desconhecida: "${acao}".`);
 }
