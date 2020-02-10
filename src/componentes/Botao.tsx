@@ -1,8 +1,8 @@
 import * as preact from 'preact';
 import svg from '../../calendar-check.svg';
-import { Array$traverseObject } from '../Array$traverseObject';
+import { Array$partitionMap } from '../Array$partitionMap';
 import { Cancelable } from '../Cancelable';
-import { LocalizadorOrgao } from '../Localizador';
+import { Left, Right } from '../Either';
 import { logger } from '../logger';
 import { parsePaginaCadastroMeusLocalizadores } from '../paginas/cadastroMeusLocalizadores';
 import { parsePaginaLocalizadoresOrgao } from '../paginas/localizadoresOrgao';
@@ -35,17 +35,16 @@ export const Botao: preact.FunctionComponent<{
         obterPaginaLocalizadoresOrgao(urlLocalizadoresOrgao).then(parsePaginaLocalizadoresOrgao),
       ]);
       const idsOrgao = new Map(orgao.map(loc => [loc.id, loc]));
-      const { desativados, localizadores } = Array$traverseObject(meus, ({ id, siglaNome }) =>
-        idsOrgao.has(id)
-          ? { localizadores: idsOrgao.get(id) as LocalizadorOrgao }
-          : { desativados: siglaNome }
+      const { left: desativados, right: localizadores } = Array$partitionMap(
+        meus,
+        ({ id, siglaNome }) => (idsOrgao.has(id) ? Right(idsOrgao.get(id)!) : Left(siglaNome))
       );
-      if (desativados) {
+      if (desativados.length > 0) {
         throw new Error(`Os seguintes localizadores foram desativados: ${desativados.join(', ')}`);
       }
       const dados = ocultarVazios
-        ? localizadores!.filter(({ quantidadeProcessos }) => quantidadeProcessos > 0)
-        : localizadores!;
+        ? localizadores.filter(({ quantidadeProcessos }) => quantidadeProcessos > 0)
+        : localizadores;
       container.textContent = '';
       preact.render(TabelaLocalizadores({ dados }), areaTabela, tabela);
     } catch (e) {
