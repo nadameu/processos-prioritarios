@@ -20,8 +20,8 @@ export class Cancelable<a> {
     const { cancel, settled } = aux(xs);
     return new Cancelable(
       Promise.all(
-        xs.map(({ _promise: promise }, i) =>
-          promise.then(
+        xs.map(({ _promise }, i) =>
+          _promise.then(
             value => {
               settled(i);
               return Promise.resolve(value);
