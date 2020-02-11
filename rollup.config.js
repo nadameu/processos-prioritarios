@@ -18,13 +18,14 @@ const isProduction = process.env.BUILD === 'production';
 const config = {
   input: path.resolve(__dirname, 'src', 'index.ts'),
 
-  external: ['lit-html', 'lit-html/directives/class-map'],
+  external: ['idb', 'lit-html', 'lit-html/directives/class-map'],
 
   output: {
     file: path.resolve(__dirname, 'dist', `${pkg.name}.user.js`),
     format: 'iife',
     banner: isDevelopment && generateBanner(),
     globals: {
+      idb: 'idb',
       'lit-html': 'litHtml',
       'lit-html/directives/class-map': 'litHtml',
     },
@@ -57,15 +58,19 @@ const config = {
   ],
 };
 
-/** @type {import('rollup').RollupOptions} */
-const litHtmlConfig = {
-  input: path.resolve(__dirname, 'src', 'lit-html.mjs'),
+/**
+ * @param {string} filename Nome do arquivo sem extensão
+ * @param {string} umdName Nome da variável UMD
+ * @return {import('rollup').RollupOptions}
+ */
+const configModulos = (filename, umdName) => ({
+  input: path.resolve(__dirname, 'src', `${filename}.mjs`),
   output: {
-    file: path.resolve(__dirname, 'dist', 'lit-html.umd.js'),
+    file: path.resolve(__dirname, 'dist', `${filename}.umd.js`),
     format: 'umd',
-    name: 'litHtml',
+    name: umdName,
   },
   plugins: [resolve(), terser({ ecma: 8, output: { comments: false } })],
-};
+});
 
-export default [config, litHtmlConfig];
+export default [config, configModulos('lit-html', 'litHtml'), configModulos('idb', 'idb')];
