@@ -37,8 +37,18 @@ export const Botao = ({
     try {
       render(Aguarde(), container);
       const [{ ocultarVazios, localizadores: meus }, orgao] = await Cancelable.all([
-        XHR(urlCadastro).then(parsePaginaCadastroMeusLocalizadores),
-        obterPaginaLocalizadoresOrgao(urlLocalizadoresOrgao).then(parsePaginaLocalizadoresOrgao),
+        XHR(urlCadastro)
+          .then(parsePaginaCadastroMeusLocalizadores)
+          .then(resultado => {
+            render(Aguarde({ localizadoresCadastro: true }), container);
+            return resultado;
+          }),
+        obterPaginaLocalizadoresOrgao(urlLocalizadoresOrgao)
+          .then(parsePaginaLocalizadoresOrgao)
+          .then(resultado => {
+            render(Aguarde({ localizadoresOrgao: true }), container);
+            return resultado;
+          }),
       ]);
       const idsOrgao = new Map(orgao.map(loc => [loc.id, loc]));
       const { left: desativados, right: localizadores } = Array$partitionMap(
