@@ -65,7 +65,7 @@ const litHtmlConfig = {
     format: 'umd',
     name: 'litHtml',
   },
-  plugins: [resolve()],
+  plugins: [resolve(), terser({ ecma: 8, output: { comments: false } })],
 };
 
 export default [config, litHtmlConfig];
