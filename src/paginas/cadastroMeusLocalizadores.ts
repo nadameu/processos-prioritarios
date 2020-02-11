@@ -1,6 +1,8 @@
+import { camposObrigatorios } from '../camposObrigatorios';
+import { Left, Right } from '../Either';
 import { MeuLocalizador } from '../Localizador';
+import { partitionMap } from '../partitionMap';
 import { query } from '../query';
-import { safePipe } from '../safePipe';
 
 interface DadosCadastro {
   ocultarVazios: boolean;
@@ -12,31 +14,31 @@ export async function parsePaginaCadastroMeusLocalizadores(doc: Document): Promi
   const tabela = await query<HTMLTableElement>('table#tblLocalizadorOrgao', doc);
   const linhas = tabela.querySelectorAll<HTMLTableRowElement>('tr[class^="infraTr"]');
   const ocultarVazios = cbox.checked;
-  const localizadores = await Promise.all(Array.from(linhas, parseLinha));
+  const { left, right: localizadores } = partitionMap(
+    Array.from(linhas, meuLocalizadorFromLinha),
+    (x, i) => {
+      if (x == null) return Left(i);
+      return Right(x);
+    }
+  );
+  if (left.length > 0) throw new Error(`Erro nos índices ${left.join(', ')}.`);
   return {
     ocultarVazios,
     localizadores,
   };
 }
 
-async function parseLinha(linha: HTMLTableRowElement): Promise<MeuLocalizador> {
-  if (linha.cells.length !== 4) throw new Error('Esperadas 4 células.');
+function meuLocalizadorFromLinha(linha: HTMLTableRowElement): MeuLocalizador | null {
+  if (linha.cells.length !== 4) return null;
 
-  const id =
-    safePipe(
-      linha.cells[0].querySelector('div:nth-child(2)'),
-      x => x.textContent,
-      x => x.match(/^.(\d{30})$/),
-      x => x[1]
-    ) || null;
-  if (id === null) throw new Error('Id desconhecido.');
-
-  const siglaNome = safePipe(linha.cells[0].textContent, x => x.trim()) || null;
-  if (siglaNome === null) throw new Error('Sigla/nome desconhecido(s).');
-
-  const quantidadeProcessos = Number(linha.cells[1].textContent);
-  if (!Number.isInteger(quantidadeProcessos))
-    throw new Error('Quantidade de processos desconhecida.');
-
-  return { id, siglaNome, quantidadeProcessos };
+  return camposObrigatorios(
+    {
+      id: linha.cells[0].querySelector('div:nth-child(2)')?.textContent?.match(/^.(\d{30})$/)?.[1],
+      siglaNome: linha.cells[0].textContent?.trim() || null,
+      quantidadeProcessos: (x => (Number.isInteger(x) ? x : null))(
+        Number(linha.cells[1]?.textContent)
+      ),
+    },
+    ['id', 'siglaNome', 'quantidadeProcessos']
+  ) as MeuLocalizador | null;
 }
