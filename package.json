@@ -15,8 +15,7 @@
     "type-check": "tsc"
   },
   "dependencies": {
-    "cookies.js": "github:nadameu/cookies.js#v1.2.0",
-    "preact": "^10.2.1"
+    "cookies.js": "github:nadameu/cookies.js#v1.2.0"
   },
   "devDependencies": {
     "@types/jest": "^24.9.0",
@@ -29,6 +28,7 @@
     "eslint-plugin-prettier": "^3.1.2",
     "idb": "^5.0.1",
     "jest": "^24.9.0",
+    "lit-html": "^1.1.2",
     "node-sass": "^4.13.1",
     "prettier": "^1.19.1",
     "rimraf": "^3.0.0",

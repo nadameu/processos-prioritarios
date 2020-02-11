@@ -28,6 +28,6 @@ export default {
   name: 'Processos prioritários (novo)',
   namespace: 'http://nadameu.com.br/processos-prioritarios',
   include,
-  require: 'https://unpkg.com/preact@^10.0.0',
+  require: 'lit-html.umd.js',
   grant: 'none',
 };

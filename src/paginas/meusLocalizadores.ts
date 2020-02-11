@@ -1,4 +1,4 @@
-import * as preact from 'preact';
+import { render } from 'lit-html';
 import { Botao } from '../componentes/Botao';
 import { query } from '../query';
 import { queryAll } from '../queryAll';
@@ -15,10 +15,7 @@ export async function meusLocalizadores() {
   const container = document.createElement('div');
   formulario.insertAdjacentElement('beforebegin', container);
 
-  preact.render(
-    Botao({ areaTabela, container, tabela, urlCadastro, urlLocalizadoresOrgao }),
-    container
-  );
+  render(Botao({ areaTabela, container, tabela, urlCadastro, urlLocalizadoresOrgao }), container);
 }
 
 async function obterUrlCadastro(btn: Element): Promise<string> {

@@ -18,13 +18,16 @@ const isProduction = process.env.BUILD === 'production';
 const config = {
   input: path.resolve(__dirname, 'src', 'index.ts'),
 
-  external: ['preact'],
+  external: ['lit-html', 'lit-html/directives/class-map'],
 
   output: {
     file: path.resolve(__dirname, 'dist', `${pkg.name}.user.js`),
     format: 'iife',
     banner: isDevelopment && generateBanner(),
-    globals: { preact: 'preact' },
+    globals: {
+      'lit-html': 'litHtml',
+      'lit-html/directives/class-map': 'litHtml',
+    },
   },
 
   plugins: [
@@ -54,4 +57,15 @@ const config = {
   ],
 };
 
-export default config;
+/** @type {import('rollup').RollupOptions} */
+const litHtmlConfig = {
+  input: path.resolve(__dirname, 'src', 'lit-html.mjs'),
+  output: {
+    file: path.resolve(__dirname, 'dist', 'lit-html.umd.js'),
+    format: 'umd',
+    name: 'litHtml',
+  },
+  plugins: [resolve()],
+};
+
+export default [config, litHtmlConfig];
