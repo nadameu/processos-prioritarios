@@ -1,6 +1,9 @@
+import { camposObrigatorios } from '../camposObrigatorios';
+import { Left, Right } from '../Either';
 import { LocalizadorOrgao } from '../Localizador';
+import { partitionMap } from '../partitionMap';
 import { query } from '../query';
-import { safePipe } from '../safePipe';
+import { textoCelulaObrigatorio } from '../textoCelulaObrigatorio';
 
 export async function parsePaginaLocalizadoresOrgao(doc: Document): Promise<LocalizadorOrgao[]> {
   const tabela = await query<HTMLTableElement>(
@@ -10,57 +13,51 @@ export async function parsePaginaLocalizadoresOrgao(doc: Document): Promise<Loca
   const linhas = tabela.querySelectorAll<HTMLTableRowElement>(
     ':scope > tbody > tr[class^="infraTr"]'
   );
-  return Promise.all(Array.from(linhas, parseLinha));
+  const { left, right } = partitionMap(Array.from(linhas, localizadorOrgaoFromLinha), (x, i) => {
+    if (x == null) return Left(i);
+    return Right(x);
+  });
+  if (left.length > 0) throw new Error(`Erro nos índices ${left.join(', ')}.`);
+  return right;
 }
 
-async function parseLinha(linha: HTMLTableRowElement): Promise<LocalizadorOrgao> {
-  if (linha.cells.length !== 8) throw new Error('Esperadas 8 células.');
+function localizadorOrgaoFromLinha(linha: HTMLTableRowElement): LocalizadorOrgao | null {
+  if (linha.cells.length !== 8) return null;
 
-  // Id
-  const id = safePipe(
-    linha.cells[0].querySelector<HTMLInputElement>('input[type="checkbox"]'),
-    x => x.value.split('-')[0]
+  const id = idFromTexto(
+    linha.cells[0].querySelector<HTMLInputElement>('input[type="checkbox"]')?.value.split('-')[0]
   );
-  if (!id || !/\d{30}/.test(id)) throw new Error('Id desconhecido.');
+  if (!id) return null;
 
-  // Sigla, nome, descricao, sistema
-  const sigla = textoCelulaObrigatorio(linha, 1);
-  if (!sigla) throw new Error('Sigla desconhecida.');
-  const nome = textoCelulaObrigatorio(linha, 2);
-  if (!nome) throw new Error('Nome desconhecido.');
-  const descricao = textoCelulaObrigatorio(linha, 3) || undefined;
-  const textoSistema = textoCelulaObrigatorio(linha, 4);
-  const sistema = textoSistema === 'Sim' ? true : textoSistema === 'Não' ? false : null;
-  if (sistema === null) throw new Error('Sistema desconhecido.');
-
-  // Quantidade de processos
-  const quantidadeProcessos = Number(linha.cells[6].textContent);
-  if (!Number.isInteger(quantidadeProcessos))
-    throw new Error('Quantidade de processos desconhecida.');
-
-  const url = safePipe(linha.cells[6].querySelector<HTMLAnchorElement>('a[href]'), x => x.href);
-  if (!url) throw new Error('Url desconhecida.');
-
-  // Lembrete
-  const lembrete =
-    safePipe(
-      linha.cells[7].querySelector(`.memoLocalizadorOrgao${id}`),
-      x => x.getAttribute('onmouseover'),
-      x => x.match(/^return infraTooltipMostrar\('Obs: (.+) \/ .+?','',400\);$/),
-      x => x[1]
-    ) || undefined;
-
-  return {
-    id,
-    url,
-    siglaNome: { sigla, nome },
-    descricao,
-    sistema,
-    lembrete,
-    quantidadeProcessos,
-  };
+  return camposObrigatorios(
+    {
+      id,
+      url: linha.cells[6].querySelector<HTMLAnchorElement>('a[href]')?.href,
+      siglaNome: camposObrigatorios(
+        { sigla: textoCelulaObrigatorio(linha, 1), nome: textoCelulaObrigatorio(linha, 2) },
+        ['sigla', 'nome']
+      ),
+      descricao: textoCelulaObrigatorio(linha, 3) || undefined,
+      sistema: sistemaFromTexto(textoCelulaObrigatorio(linha, 4)),
+      lembrete:
+        linha.cells[7]
+          .querySelector(`.memoLocalizadorOrgao${id}`)
+          ?.getAttribute('onmouseover')
+          ?.match(/^return infraTooltipMostrar\('Obs: (.+) \/ .+?','',400\);$/)?.[1] || undefined,
+      quantidadeProcessos: numeroInteiro(Number(linha.cells[6].textContent)),
+    },
+    ['id', 'url', 'siglaNome', 'sistema', 'quantidadeProcessos']
+  );
 }
 
-function textoCelulaObrigatorio(linha: HTMLTableRowElement, indice: number) {
-  return safePipe(linha.cells[indice].textContent, x => x.trim()) || null;
+function idFromTexto(texto: string | null | undefined): string | null {
+  return texto && /\d{30}/.test(texto) ? texto : null;
+}
+
+function sistemaFromTexto(texto: string | null | undefined): boolean | null {
+  return texto === 'Sim' ? true : texto === 'Não' ? false : null;
+}
+
+function numeroInteiro(num: number): number | null {
+  return Number.isInteger(num) ? num : null;
 }

@@ -2,30 +2,28 @@ import { render } from 'lit-html';
 import { Botao } from '../componentes/Botao';
 import { query } from '../query';
 import { queryAll } from '../queryAll';
-import { safePipe } from '../safePipe';
 import './meusLocalizadores.scss';
 
 export async function meusLocalizadores() {
-  const formulario = await query('#frmLocalizadorLista');
-  const areaTabela = await query('#divInfraAreaTabela');
-  const tabela = await query('table[summary="Tabela de Localizadores."]');
-  const urlCadastro = await query('#btnNova').then(obterUrlCadastro);
-  const urlLocalizadoresOrgao = await query('[id="main-menu"]').then(obterUrlLocalizadoresOrgao);
-
+  const [formulario, areaTabela, botaoCadastro, menu] = await Promise.all(
+    ['#frmLocalizadorLista', '#divInfraAreaTabela', '#btnNova', '[id="main-menu"]'].map(sel =>
+      query(sel)
+    )
+  );
+  const [urlCadastro, urlLocalizadoresOrgao] = await Promise.all([
+    obterUrlCadastro(botaoCadastro),
+    obterUrlLocalizadoresOrgao(menu),
+  ]);
   const container = document.createElement('div');
   formulario.insertAdjacentElement('beforebegin', container);
-
-  render(Botao({ areaTabela, container, tabela, urlCadastro, urlLocalizadoresOrgao }), container);
+  render(Botao({ areaTabela, container, urlCadastro, urlLocalizadoresOrgao }), container);
 }
 
 async function obterUrlCadastro(btn: Element): Promise<string> {
-  const url = safePipe(
-    btn.getAttribute('onclick'),
-    x => x.match(/location.href='(.*)'/),
-    x => x[1]
+  return (
+    btn.getAttribute('onclick')?.match(/location.href='(.*)'/)?.[1] ||
+    Promise.reject(new Error('URL não encontrada.'))
   );
-  if (!url) throw new Error('URL não encontrada.');
-  return url;
 }
 
 async function obterUrlLocalizadoresOrgao(menu: Element): Promise<string> {

@@ -3,6 +3,7 @@ import { Left, Right } from '../Either';
 import { MeuLocalizador } from '../Localizador';
 import { partitionMap } from '../partitionMap';
 import { query } from '../query';
+import { textoCelulaObrigatorio } from '../textoCelulaObrigatorio';
 
 interface DadosCadastro {
   ocultarVazios: boolean;
@@ -10,8 +11,10 @@ interface DadosCadastro {
 }
 
 export async function parsePaginaCadastroMeusLocalizadores(doc: Document): Promise<DadosCadastro> {
-  const cbox = await query<HTMLInputElement>('input#cbox[type="checkbox"]', doc);
-  const tabela = await query<HTMLTableElement>('table#tblLocalizadorOrgao', doc);
+  const [cbox, tabela] = await Promise.all([
+    query<HTMLInputElement>('input#cbox[type="checkbox"]', doc),
+    query<HTMLTableElement>('table#tblLocalizadorOrgao', doc),
+  ]);
   const linhas = tabela.querySelectorAll<HTMLTableRowElement>('tr[class^="infraTr"]');
   const ocultarVazios = cbox.checked;
   const { left, right: localizadores } = partitionMap(
@@ -31,14 +34,11 @@ export async function parsePaginaCadastroMeusLocalizadores(doc: Document): Promi
 function meuLocalizadorFromLinha(linha: HTMLTableRowElement): MeuLocalizador | null {
   if (linha.cells.length !== 4) return null;
 
-  return camposObrigatorios(
-    {
-      id: linha.cells[0].querySelector('div:nth-child(2)')?.textContent?.match(/^.(\d{30})$/)?.[1],
-      siglaNome: linha.cells[0].textContent?.trim() || null,
-      quantidadeProcessos: (x => (Number.isInteger(x) ? x : null))(
-        Number(linha.cells[1]?.textContent)
-      ),
-    },
-    ['id', 'siglaNome', 'quantidadeProcessos']
-  ) as MeuLocalizador | null;
+  return camposObrigatorios({
+    id: linha.cells[0].querySelector('div:nth-child(2)')?.textContent?.match(/^.(\d{30})$/)?.[1],
+    siglaNome: textoCelulaObrigatorio(linha, 0),
+    quantidadeProcessos: (x => (Number.isInteger(x) ? x : null))(
+      Number(textoCelulaObrigatorio(linha, 1))
+    ),
+  });
 }
