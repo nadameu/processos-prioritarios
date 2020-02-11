@@ -1,5 +1,5 @@
 import { camposObrigatorios } from '../camposObrigatorios';
-import { Left, Right } from '../Either';
+import { note } from '../Either';
 import { MeuLocalizador } from '../Localizador';
 import { partitionMap } from '../partitionMap';
 import { query } from '../query';
@@ -19,10 +19,7 @@ export async function parsePaginaCadastroMeusLocalizadores(doc: Document): Promi
   const ocultarVazios = cbox.checked;
   const { left, right: localizadores } = partitionMap(
     Array.from(linhas, meuLocalizadorFromLinha),
-    (x, i) => {
-      if (x == null) return Left(i);
-      return Right(x);
-    }
+    (x, i) => note(i, x)
   );
   if (left.length > 0) throw new Error(`Erro nos índices ${left.join(', ')}.`);
   return {

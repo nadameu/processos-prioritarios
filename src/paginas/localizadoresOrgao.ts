@@ -1,5 +1,5 @@
 import { camposObrigatorios } from '../camposObrigatorios';
-import { Left, Right } from '../Either';
+import { note } from '../Either';
 import { LocalizadorOrgao } from '../Localizador';
 import { partitionMap } from '../partitionMap';
 import { query } from '../query';
@@ -13,10 +13,9 @@ export async function parsePaginaLocalizadoresOrgao(doc: Document): Promise<Loca
   const linhas = tabela.querySelectorAll<HTMLTableRowElement>(
     ':scope > tbody > tr[class^="infraTr"]'
   );
-  const { left, right } = partitionMap(Array.from(linhas, localizadorOrgaoFromLinha), (x, i) => {
-    if (x == null) return Left(i);
-    return Right(x);
-  });
+  const { left, right } = partitionMap(Array.from(linhas, localizadorOrgaoFromLinha), (x, i) =>
+    note(i, x)
+  );
   if (left.length > 0) throw new Error(`Erro nos índices ${left.join(', ')}.`);
   return right;
 }

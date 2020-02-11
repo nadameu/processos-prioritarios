@@ -1,15 +1,15 @@
 import { html, render } from 'lit-html';
 import { Cancelable } from '../Cancelable';
-import { Left, Right } from '../Either';
+import { note } from '../Either';
 import { logger } from '../logger';
 import { parsePaginaCadastroMeusLocalizadores } from '../paginas/cadastroMeusLocalizadores';
 import { parsePaginaLocalizadoresOrgao } from '../paginas/localizadoresOrgao';
 import { partitionMap } from '../partitionMap';
 import { XHR } from '../XHR';
 import { Aguarde } from './Aguarde';
+import { Logo } from './Logo';
 import { MensagemErro } from './MensagemErro';
 import { TabelaLocalizadores } from './TabelaLocalizadores';
-import { Logo } from './Logo';
 
 export const Botao = ({
   areaTabela,
@@ -47,7 +47,7 @@ export const Botao = ({
       ]);
       const idsOrgao = new Map(orgao.map(loc => [loc.id, loc]));
       const { left: desativados, right: localizadores } = partitionMap(meus, ({ id, siglaNome }) =>
-        idsOrgao.has(id) ? Right(idsOrgao.get(id)!) : Left(siglaNome)
+        note(siglaNome, idsOrgao.get(id))
       );
       if (desativados.length > 0) {
         throw new Error(`Os seguintes localizadores foram desativados: ${desativados.join(', ')}`);

@@ -25,3 +25,11 @@ export function Right<b>(rightValue: b): Right<b> {
 }
 Right.prototype.isLeft = false;
 Right.prototype.isRight = true;
+
+export function note<a, b>(leftValue: a, maybe: b | null | undefined): Either<a, b> {
+  return maybe != null ? Right(maybe) : Left(leftValue);
+}
+
+export function hush<a, b>(either: Either<a, b>): b | null {
+  return either.isLeft ? null : either.rightValue;
+}
