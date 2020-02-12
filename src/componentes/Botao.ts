@@ -86,32 +86,38 @@ function obterPaginaLocalizadoresOrgao(url: string) {
 
 function obterPaginaTextosPadrao(url: string) {
   return new Cancelable(
-    new Promise<FormData>((res, rej) => {
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = url;
-      iframe.addEventListener(
-        'load',
-        async () => {
-          try {
-            const doc = await (iframe.contentWindow?.document || Promise.reject());
-            const limpar = await query<HTMLButtonElement>('button#btnLimpar', doc);
-            limpar.click();
-            const form = await query<HTMLFormElement>('form#frmTextoPadraoLista', doc);
-            const data = new FormData(form);
-            document.body.removeChild(iframe);
-            res(data);
-          } catch (error) {
-            rej('Não foi possível obter a página dos textos padrão.');
-          }
-        },
-        { once: true }
-      );
-      document.body.appendChild(iframe);
-    })
+    obterDocIframe(url)
+      .then(async doc => {
+        const limpar = await query<HTMLButtonElement>('button#btnLimpar', doc);
+        limpar.click();
+        const form = await query<HTMLFormElement>('form#frmTextoPadraoLista', doc);
+        const data = new FormData(form);
+        return data;
+      })
+      .catch(() => {
+        throw new Error('Não foi possível obter a página dos textos padrão.');
+      })
   ).chain(data => {
     data.set('txtDescricaoTexto', 'teste');
     data.set('selTipoPaginacao', '2');
     return XHR(url, 'POST', data);
+  });
+}
+
+function obterDocIframe(url: string) {
+  return new Promise<Document>((res, rej) => {
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = url;
+    iframe.addEventListener(
+      'load',
+      () => {
+        if (!iframe.contentWindow) rej(new Error('Não foi possível carregar a página.'));
+        else res(iframe.contentWindow.document);
+        document.body.removeChild(iframe);
+      },
+      { once: true }
+    );
+    document.body.appendChild(iframe);
   });
 }
