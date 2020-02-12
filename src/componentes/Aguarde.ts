@@ -1,23 +1,29 @@
 import { html } from 'lit-html';
 
-let status: { localizadoresCadastro: boolean; localizadoresOrgao: boolean };
+let status: { localizadoresCadastro: boolean; localizadoresOrgao: boolean; textosPadrao: boolean };
+const descricoes: Record<keyof typeof status, string> = {
+  localizadoresCadastro: 'Localizadores cadastrados',
+  localizadoresOrgao: 'Localizadores do órgão',
+  textosPadrao: 'Textos padrão',
+};
 
-export const Aguarde = (
-  changeStatus: { localizadoresCadastro?: boolean; localizadoresOrgao?: boolean } | null = null
-) => {
-  if (changeStatus === null) {
-    status = { localizadoresCadastro: false, localizadoresOrgao: false };
-  } else {
-    if (changeStatus.localizadoresCadastro !== undefined)
-      status.localizadoresCadastro = changeStatus.localizadoresCadastro;
-    if (changeStatus.localizadoresOrgao !== undefined)
-      status.localizadoresOrgao = changeStatus.localizadoresOrgao;
+export const Aguarde = (changeStatus?: Partial<typeof status>) => {
+  if (changeStatus) Object.assign(status, changeStatus);
+  else {
+    status = { localizadoresCadastro: false, localizadoresOrgao: false, textosPadrao: false };
   }
   return html`
     <p class="summa-dies__aguarde">
       Aguarde, carregando:<br />
-      &bull; Localizadores cadastrados...${status.localizadoresCadastro ? ' ok.' : ''}<br />
-      &bull; Localizadores do órgão...${status.localizadoresOrgao ? ' ok.' : ''}<br />
+      ${Object.entries(descricoes).map(([nome, descricao]) =>
+        item(nome as keyof typeof status, descricao)
+      )}
     </p>
   `;
 };
+
+function item(nome: keyof typeof status, descricao: string) {
+  return html`
+    &bull; ${descricao}...${status[nome] ? ' ok.' : ''}<br />
+  `;
+}
