@@ -1,5 +1,6 @@
 export class Cancelable<a> {
-  constructor(private _promise: Promise<a>, private _token: { cancel(): void }) {}
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  constructor(private _promise: Promise<a>, private _token: { cancel(): void } = { cancel() {} }) {}
 
   cancel() {
     this._token.cancel();
