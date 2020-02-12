@@ -10,13 +10,17 @@ export async function meusLocalizadores() {
       query(sel)
     )
   );
-  const [urlCadastro, urlLocalizadoresOrgao] = await Promise.all([
+  const [urlCadastro, urlLocalizadoresOrgao, urlTextosPadrao] = await Promise.all([
     obterUrlCadastro(botaoCadastro),
     obterUrlLocalizadoresOrgao(menu),
+    obterUrlTextosPadrao(menu),
   ]);
   const container = document.createElement('div');
   formulario.insertAdjacentElement('beforebegin', container);
-  render(Botao({ areaTabela, container, urlCadastro, urlLocalizadoresOrgao }), container);
+  render(
+    Botao({ areaTabela, container, urlCadastro, urlLocalizadoresOrgao, urlTextosPadrao }),
+    container
+  );
 }
 
 async function obterUrlCadastro(btn: Element): Promise<string> {
@@ -32,5 +36,13 @@ async function obterUrlLocalizadoresOrgao(menu: Element): Promise<string> {
     .filter(url => /\?acao=localizador_orgao_listar&/.test(url));
   if (urls.length !== 1)
     throw new Error('Link para a lista de localizadores do órgão não encontrado.');
+  return urls[0];
+}
+
+async function obterUrlTextosPadrao(menu: Element): Promise<string> {
+  const urls = queryAll<HTMLAnchorElement>('a[href]', menu)
+    .map(link => link.href)
+    .filter(url => /\?acao=texto_padrao_listar&/.test(url));
+  if (urls.length !== 1) throw new Error('Link para a lista de textos padrão não encontrado.');
   return urls[0];
 }

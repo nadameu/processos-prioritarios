@@ -4,7 +4,9 @@ import { note } from '../Either';
 import { logger } from '../logger';
 import { parsePaginaCadastroMeusLocalizadores } from '../paginas/cadastroMeusLocalizadores';
 import { parsePaginaLocalizadoresOrgao } from '../paginas/localizadoresOrgao';
+import { parsePaginaTextosPadrao } from '../paginas/textosPadrao';
 import { partitionMap } from '../partitionMap';
+import { query } from '../query';
 import { XHR } from '../XHR';
 import { Aguarde } from './Aguarde';
 import { Logo } from './Logo';
@@ -16,11 +18,13 @@ export const Botao = ({
   container,
   urlCadastro,
   urlLocalizadoresOrgao,
+  urlTextosPadrao,
 }: {
   areaTabela: Element;
   container: Element;
   urlCadastro: string;
   urlLocalizadoresOrgao: string;
+  urlTextosPadrao: string;
 }) => {
   return html`
     <button type="button" class="summa-dies__botao" @click=${() => onClick()}>
@@ -42,6 +46,13 @@ export const Botao = ({
           .then(parsePaginaLocalizadoresOrgao)
           .then(resultado => {
             render(Aguarde({ localizadoresOrgao: true }), container);
+            return resultado;
+          }),
+        obterPaginaTextosPadrao(urlTextosPadrao)
+          .then(parsePaginaTextosPadrao)
+          .then(resultado => {
+            render(Aguarde({ textosPadrao: true }), container);
+            logger.log(resultado);
             return resultado;
           }),
       ]);
@@ -71,4 +82,36 @@ function obterPaginaLocalizadoresOrgao(url: string) {
   data.append('hdnInfraPaginaAtual', '0');
   data.append('chkOcultarSemProcesso', '0');
   return XHR(url, 'POST', data);
+}
+
+function obterPaginaTextosPadrao(url: string) {
+  return new Cancelable(
+    new Promise<FormData>((res, rej) => {
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = url;
+      iframe.addEventListener(
+        'load',
+        async () => {
+          try {
+            const doc = await (iframe.contentWindow?.document || Promise.reject());
+            const limpar = await query<HTMLButtonElement>('button#btnLimpar', doc);
+            limpar.click();
+            const form = await query<HTMLFormElement>('form#frmTextoPadraoLista', doc);
+            const data = new FormData(form);
+            document.body.removeChild(iframe);
+            res(data);
+          } catch (error) {
+            rej('Não foi possível obter a página dos textos padrão.');
+          }
+        },
+        { once: true }
+      );
+      document.body.appendChild(iframe);
+    })
+  ).chain(data => {
+    data.set('txtDescricaoTexto', 'teste');
+    data.set('selTipoPaginacao', '2');
+    return XHR(url, 'POST', data);
+  });
 }
