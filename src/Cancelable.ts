@@ -2,6 +2,18 @@ export class Cancelable<a> {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   constructor(private _promise: Promise<a>, private _token: { cancel(): void } = { cancel() {} }) {}
 
+  chain<b>(f: (_: a) => Cancelable<b>): Cancelable<b> {
+    const token = {
+      cancel: () => this._token.cancel(),
+    };
+    const promise = this._promise.then(value => {
+      const cancelable = f(value);
+      token.cancel = () => cancelable._token.cancel();
+      return cancelable._promise;
+    });
+    return new Cancelable(promise, token);
+  }
+
   cancel() {
     this._token.cancel();
   }
