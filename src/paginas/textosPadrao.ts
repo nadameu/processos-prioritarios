@@ -17,7 +17,6 @@ export async function textosPadrao() {
   const form = await query<HTMLFormElement>('form#frmTextoPadraoLista');
   const data = new FormData(form);
   top.postMessage(data, document.location.origin);
-  return data;
 }
 
 export async function parsePaginaTextosPadrao(doc: Document): Promise<TextoPadrao[]> {

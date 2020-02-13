@@ -39,7 +39,7 @@ export const Botao = ({
       const [
         { ocultarVazios, localizadores: meus },
         orgao,
-        _textosPadrao,
+        textosPadrao,
         infoRelatorioGeral,
       ] = await Cancelable.all([
         XHR(urlCadastro)
@@ -58,7 +58,6 @@ export const Botao = ({
           .then(parsePaginaTextosPadrao)
           .then(resultado => {
             render(Aguarde({ textosPadrao: true }), container);
-            logger.log(resultado);
             return resultado;
           }),
         obterPaginaRelatorioGeral(urlRelatorioGeral).then(resultado => {
@@ -66,6 +65,7 @@ export const Botao = ({
           return resultado;
         }),
       ]);
+      logger.log('Textos padrão', textosPadrao);
       const idsOrgao = new Map(orgao.map(loc => [loc.id, loc]));
       const { left: desativados, right: localizadores } = partitionMap(meus, ({ id, siglaNome }) =>
         note(siglaNome, idsOrgao.get(id))
@@ -96,7 +96,6 @@ function obterPaginaLocalizadoresOrgao(url: string) {
 
 function obterPaginaTextosPadrao(url: string) {
   return new Cancelable(mensagemIframe(`${url}#limpar`)).chain(data => {
-    logger.log({ data });
     data.set('txtDescricaoTexto', 'teste');
     data.set('selTipoPaginacao', '2');
     return XHR(url, 'POST', data);
