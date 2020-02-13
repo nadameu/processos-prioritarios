@@ -1,16 +1,15 @@
 import { html, nothing } from 'lit-html';
 import { classMap } from 'lit-html/directives/class-map';
+import { until } from 'lit-html/directives/until';
 import { LocalizadorOrgao, siglaNomeToTexto } from '../Localizador';
+import { parsePaginaRelatorioGeralLocalizador } from '../paginas/relatorioGeralLocalizador';
+import { XHR } from '../XHR';
 import { LinkLocalizador } from './LinkLocalizador';
 
-export const LinhaLocalizador = ({
-  url,
-  siglaNome,
-  descricao,
-  lembrete,
-  sistema,
-  quantidadeProcessos,
-}: LocalizadorOrgao) =>
+export const LinhaLocalizador = (
+  { id, url, siglaNome, descricao, lembrete, sistema, quantidadeProcessos }: LocalizadorOrgao,
+  infoRelatorioGeral: { data: FormData; url: string }
+) =>
   html`
     <tr class=${classMap({ infraTrClara: true, 'summa-dies__vazio': quantidadeProcessos === 0 })}>
       <td>
@@ -36,7 +35,28 @@ export const LinhaLocalizador = ({
       </td>
       <td>${sistema ? 'Sim' : 'Não'}</td>
       <td>
-        ${LinkLocalizador(url, String(quantidadeProcessos))}
+        ${until(
+          obterPaginaRelatorioGeralLocalizador(id, infoRelatorioGeral)
+            .then(parsePaginaRelatorioGeralLocalizador)
+            .then(texto => LinkLocalizador(url, texto)),
+          'Carregando...'
+        )}
       </td>
     </tr>
   `;
+
+function obterPaginaRelatorioGeralLocalizador(
+  id: string,
+  { data: cleanData, url }: { data: FormData; url: string }
+) {
+  const data = cloneFormData(cleanData);
+  data.set('selLocalizadorPrincipalSelecionados', id);
+  data.set('paginacao', '10');
+  return XHR(url, 'POST', data);
+}
+
+function cloneFormData(data: FormData) {
+  const newData = new FormData();
+  for (const [key, value] of data) newData.append(key, value);
+  return newData;
+}

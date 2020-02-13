@@ -2,7 +2,10 @@ import { html } from 'lit-html';
 import { LocalizadorOrgao } from '../Localizador';
 import { LinhaLocalizador } from './LinhaLocalizador';
 
-export const TabelaLocalizadores = (dados: LocalizadorOrgao[]) =>
+export const TabelaLocalizadores = (
+  dados: LocalizadorOrgao[],
+  infoRelatorioGeral: { data: FormData; url: string }
+) =>
   html`
     <table class="infraTable summa-dies__tabela">
       <thead>
@@ -18,7 +21,7 @@ export const TabelaLocalizadores = (dados: LocalizadorOrgao[]) =>
         </tr>
       </thead>
       <tbody>
-        ${dados.map(LinhaLocalizador)}
+        ${dados.map(d => LinhaLocalizador(d, infoRelatorioGeral))}
       </tbody>
     </table>
   `;

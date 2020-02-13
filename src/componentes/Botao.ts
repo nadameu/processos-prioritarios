@@ -6,7 +6,6 @@ import { parsePaginaCadastroMeusLocalizadores } from '../paginas/cadastroMeusLoc
 import { parsePaginaLocalizadoresOrgao } from '../paginas/localizadoresOrgao';
 import { parsePaginaTextosPadrao } from '../paginas/textosPadrao';
 import { partitionMap } from '../partitionMap';
-import { query } from '../query';
 import { XHR } from '../XHR';
 import { Aguarde } from './Aguarde';
 import { Logo } from './Logo';
@@ -78,14 +77,7 @@ export const Botao = ({
         ? localizadores.filter(({ quantidadeProcessos }) => quantidadeProcessos > 0)
         : localizadores;
       container.textContent = '';
-      render(TabelaLocalizadores(dados), areaTabela);
-      await Cancelable.all(
-        localizadores.map(({ id }) =>
-          obterPaginaRelatorioGeralLocalizador(id)(infoRelatorioGeral).then(
-            parsePaginaRelatorioGeralLocalizador
-          )
-        )
-      );
+      render(TabelaLocalizadores(dados, infoRelatorioGeral), areaTabela);
     } catch (e) {
       logger.error(e);
       render(MensagemErro(e instanceof Error ? e.message : String(e)), container);
@@ -113,33 +105,6 @@ function obterPaginaTextosPadrao(url: string) {
 
 function obterPaginaRelatorioGeral(url: string): Cancelable<{ data: FormData; url: string }> {
   return new Cancelable(mensagemIframe(`${url}#limpar`));
-}
-
-function obterPaginaRelatorioGeralLocalizador(id: string) {
-  return function({ data: cleanData, url }: { data: FormData; url: string }) {
-    const data = cloneFormData(cleanData);
-    data.set('selLocalizadorPrincipalSelecionados', id);
-    data.set('paginacao', '10');
-    return XHR(url, 'POST', data);
-  };
-}
-
-async function parsePaginaRelatorioGeralLocalizador(doc: Document) {
-  const caption = await query<HTMLTableCaptionElement>(
-    'table#tabelaLocalizadores > caption.infraCaption',
-    doc
-  ).catch(async () => {
-    const areaTabela = await query('#divInfraAreaTabela', doc);
-    if (areaTabela.childNodes.length <= 3) return areaTabela.firstElementChild!;
-    else throw new Error();
-  });
-  logger.log(caption.textContent);
-}
-
-function cloneFormData(data: FormData) {
-  const newData = new FormData();
-  for (const [key, value] of data) newData.append(key, value);
-  return newData;
 }
 
 function mensagemIframe<T = any>(url: string): Promise<T> {

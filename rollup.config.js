@@ -18,7 +18,7 @@ const isProduction = process.env.BUILD === 'production';
 const config = {
   input: path.resolve(__dirname, 'src', 'index.ts'),
 
-  external: ['idb', 'lit-html', 'lit-html/directives/class-map'],
+  external: ['idb', 'lit-html', 'lit-html/directives/class-map', 'lit-html/directives/until'],
 
   output: {
     file: path.resolve(__dirname, 'dist', `${pkg.name}.user.js`),
@@ -28,6 +28,7 @@ const config = {
       idb: 'idb',
       'lit-html': 'litHtml',
       'lit-html/directives/class-map': 'litHtml',
+      'lit-html/directives/until': 'litHtml',
     },
   },
 
