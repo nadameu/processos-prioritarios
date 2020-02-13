@@ -6,6 +6,7 @@ import { parsePaginaCadastroMeusLocalizadores } from '../paginas/cadastroMeusLoc
 import { parsePaginaLocalizadoresOrgao } from '../paginas/localizadoresOrgao';
 import { parsePaginaTextosPadrao } from '../paginas/textosPadrao';
 import { partitionMap } from '../partitionMap';
+import { query } from '../query';
 import { XHR } from '../XHR';
 import { Aguarde } from './Aguarde';
 import { Logo } from './Logo';
@@ -73,8 +74,12 @@ export const Botao = ({
           render(Aguarde({ relatorioGeral: true }), container);
           return resultado;
         })
-        .chain(obterPaginaRelatorioGeralLocalizador(urlRelatorioGeral, localizadores[0].id))
-        .then(parsePaginaRelatorioGeralLocalizador);
+        .chain(({ data, url }) =>
+          Cancelable.all(
+            localizadores.map(({ id }) => obterPaginaRelatorioGeralLocalizador(id)({ data, url }))
+          )
+        )
+        .then(docs => Promise.all(docs.map(parsePaginaRelatorioGeralLocalizador)));
       render(TabelaLocalizadores(dados), areaTabela);
     } catch (e) {
       logger.error(e);
@@ -101,20 +106,28 @@ function obterPaginaTextosPadrao(url: string) {
   });
 }
 
-function obterPaginaRelatorioGeral(url: string): Cancelable<FormData> {
+function obterPaginaRelatorioGeral(url: string): Cancelable<{ data: FormData; url: string }> {
   return new Cancelable(mensagemIframe(`${url}#limpar`));
 }
 
-function obterPaginaRelatorioGeralLocalizador(url: string, id: string) {
-  return function(cleanData: FormData) {
+function obterPaginaRelatorioGeralLocalizador(id: string) {
+  return function({ data: cleanData, url }: { data: FormData; url: string }) {
     const data = cloneFormData(cleanData);
     data.set('selLocalizadorPrincipalSelecionados', id);
     return XHR(url, 'POST', data);
   };
 }
 
-function parsePaginaRelatorioGeralLocalizador(doc: Document) {
-  logger.log(doc);
+async function parsePaginaRelatorioGeralLocalizador(doc: Document) {
+  const caption = await query<HTMLTableCaptionElement>(
+    'table#tabelaLocalizadores > caption.infraCaption',
+    doc
+  ).catch(async () => {
+    const areaTabela = await query('#divInfraAreaTabela', doc);
+    if (areaTabela.childNodes.length <= 3) return areaTabela.firstElementChild!;
+    else throw new Error();
+  });
+  logger.log(caption.textContent);
 }
 
 function cloneFormData(data: FormData) {
@@ -130,6 +143,7 @@ function mensagemIframe<T = any>(url: string): Promise<T> {
       'style',
       'position: absolute; left: 25vw; top: 25vh; background: white; width: 50vw; height: 50vh;'
     );
+    iframe.style.display = 'none';
     iframe.src = url;
     window.addEventListener('message', function handler({ data, origin, source }) {
       if (origin === document.location.origin && source && source === iframe.contentWindow) {

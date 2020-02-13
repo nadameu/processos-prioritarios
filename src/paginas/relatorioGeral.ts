@@ -24,8 +24,9 @@ export async function relatorioGeral() {
   } else if (document.location.hash === '#enviar') {
     const form = await query<HTMLFormElement>('form#frmProcessoLista');
     const data = new FormData(form);
-    top.postMessage(data, document.location.origin);
-    return data;
+    const url = form.action;
+    top.postMessage({ data, url }, document.location.origin);
+    return { data, url };
   } else {
     console.log(document.location.hash);
     throw new Error('Hash desconhecido.');
