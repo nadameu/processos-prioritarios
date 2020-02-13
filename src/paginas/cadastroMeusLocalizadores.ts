@@ -33,7 +33,7 @@ function meuLocalizadorFromLinha(linha: HTMLTableRowElement): MeuLocalizador | n
 
   return camposObrigatorios({
     id: linha.cells[0].querySelector('div:nth-child(2)')?.textContent?.match(/^.(\d{30})$/)?.[1],
-    siglaNome: textoCelulaObrigatorio(linha, 0),
+    siglaNome: linha.cells[0].querySelector('div:nth-child(1)')?.textContent || null,
     quantidadeProcessos: (x => (Number.isInteger(x) ? x : null))(
       Number(textoCelulaObrigatorio(linha, 1))
     ),

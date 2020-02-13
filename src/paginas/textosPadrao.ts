@@ -1,9 +1,23 @@
 import { camposObrigatorios } from '../camposObrigatorios';
 import { note } from '../Either';
+import { fromEvento } from '../fromEvento';
 import { partitionMap } from '../partitionMap';
 import { query } from '../query';
 import { textoCelulaObrigatorio } from '../textoCelulaObrigatorio';
 import { TextoPadrao } from '../TextoPadrao';
+
+export async function textosPadrao() {
+  if (document.location.hash !== '#limpar') throw new Error('Esperada hash #limpar.');
+  const top = window.top;
+  if (top === window) throw new Error('Não é iframe.');
+  await fromEvento(window as any, 'load');
+  const limpar = await query<HTMLButtonElement>('button#btnLimpar');
+  limpar.click();
+  const form = await query<HTMLFormElement>('form#frmTextoPadraoLista');
+  const data = new FormData(form);
+  top.postMessage(data, document.location.origin);
+  return data;
+}
 
 export async function parsePaginaTextosPadrao(doc: Document): Promise<TextoPadrao[]> {
   const tabela = await query<HTMLTableElement>('table[summary="Tabela de Textos Padrão"]', doc);

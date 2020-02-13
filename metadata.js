@@ -15,10 +15,11 @@ const include = concat(
   ),
   '/controlador.php?acao=',
   oneOf(
-    'usuario_tipo_monitoramento_localizador_listar',
     'localizador_processos_lista',
     'localizador_orgao_listar',
     'relatorio_geral_listar',
+    'texto_padrao_listar',
+    'usuario_tipo_monitoramento_localizador_listar',
     concat(/[^&]+/, '&acao_origem=principal')
   ),
   '&'

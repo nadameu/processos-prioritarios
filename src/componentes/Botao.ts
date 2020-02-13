@@ -6,7 +6,6 @@ import { parsePaginaCadastroMeusLocalizadores } from '../paginas/cadastroMeusLoc
 import { parsePaginaLocalizadoresOrgao } from '../paginas/localizadoresOrgao';
 import { parsePaginaTextosPadrao } from '../paginas/textosPadrao';
 import { partitionMap } from '../partitionMap';
-import { query } from '../query';
 import { XHR } from '../XHR';
 import { Aguarde } from './Aguarde';
 import { Logo } from './Logo';
@@ -19,12 +18,14 @@ export const Botao = ({
   urlCadastro,
   urlLocalizadoresOrgao,
   urlTextosPadrao,
+  urlRelatorioGeral,
 }: {
   areaTabela: Element;
   container: Element;
   urlCadastro: string;
   urlLocalizadoresOrgao: string;
   urlTextosPadrao: string;
+  urlRelatorioGeral: string;
 }) => {
   return html`
     <button type="button" class="summa-dies__botao" @click=${() => onClick()}>
@@ -67,6 +68,13 @@ export const Botao = ({
         ? localizadores.filter(({ quantidadeProcessos }) => quantidadeProcessos > 0)
         : localizadores;
       container.textContent = '';
+      await obterPaginaRelatorioGeral(urlRelatorioGeral)
+        .then(resultado => {
+          render(Aguarde({ relatorioGeral: true }), container);
+          return resultado;
+        })
+        .chain(obterPaginaRelatorioGeralLocalizador(urlRelatorioGeral, localizadores[0].id))
+        .then(parsePaginaRelatorioGeralLocalizador);
       render(TabelaLocalizadores(dados), areaTabela);
     } catch (e) {
       logger.error(e);
@@ -85,39 +93,51 @@ function obterPaginaLocalizadoresOrgao(url: string) {
 }
 
 function obterPaginaTextosPadrao(url: string) {
-  return new Cancelable(
-    obterDocIframe(url)
-      .then(async doc => {
-        const limpar = await query<HTMLButtonElement>('button#btnLimpar', doc);
-        limpar.click();
-        const form = await query<HTMLFormElement>('form#frmTextoPadraoLista', doc);
-        const data = new FormData(form);
-        return data;
-      })
-      .catch(() => {
-        throw new Error('Não foi possível obter a página dos textos padrão.');
-      })
-  ).chain(data => {
+  return new Cancelable(mensagemIframe(`${url}#limpar`)).chain(data => {
+    logger.log({ data });
     data.set('txtDescricaoTexto', 'teste');
     data.set('selTipoPaginacao', '2');
     return XHR(url, 'POST', data);
   });
 }
 
-function obterDocIframe(url: string) {
-  return new Promise<Document>((res, rej) => {
+function obterPaginaRelatorioGeral(url: string): Cancelable<FormData> {
+  return new Cancelable(mensagemIframe(`${url}#limpar`));
+}
+
+function obterPaginaRelatorioGeralLocalizador(url: string, id: string) {
+  return function(cleanData: FormData) {
+    const data = cloneFormData(cleanData);
+    data.set('selLocalizadorPrincipalSelecionados', id);
+    return XHR(url, 'POST', data);
+  };
+}
+
+function parsePaginaRelatorioGeralLocalizador(doc: Document) {
+  logger.log(doc);
+}
+
+function cloneFormData(data: FormData) {
+  const newData = new FormData();
+  for (const [key, value] of data) newData.append(key, value);
+  return newData;
+}
+
+function mensagemIframe<T = any>(url: string): Promise<T> {
+  return new Promise<T>(res => {
     const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = url;
-    iframe.addEventListener(
-      'load',
-      () => {
-        if (!iframe.contentWindow) rej(new Error('Não foi possível carregar a página.'));
-        else res(iframe.contentWindow.document);
-        document.body.removeChild(iframe);
-      },
-      { once: true }
+    iframe.setAttribute(
+      'style',
+      'position: absolute; left: 25vw; top: 25vh; background: white; width: 50vw; height: 50vh;'
     );
+    iframe.src = url;
+    window.addEventListener('message', function handler({ data, origin, source }) {
+      if (origin === document.location.origin && source && source === iframe.contentWindow) {
+        window.removeEventListener('message', handler);
+        res(data);
+        document.body.removeChild(iframe);
+      }
+    });
     document.body.appendChild(iframe);
   });
 }
