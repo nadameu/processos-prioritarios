@@ -1,5 +1,4 @@
 import { Cancelable } from './Cancelable';
-import { logger } from './logger';
 
 export function XHR(
   url: string,
@@ -24,7 +23,6 @@ export function XHR(
       }
     };
     token.cancel = function cancel() {
-      logger.log('Aborted');
       xhr.abort();
     };
     xhr.send(data);

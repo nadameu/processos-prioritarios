@@ -37,7 +37,12 @@ export const Botao = ({
   async function onClick() {
     try {
       render(Aguarde(), container);
-      const [{ ocultarVazios, localizadores: meus }, orgao] = await Cancelable.all([
+      const [
+        { ocultarVazios, localizadores: meus },
+        orgao,
+        _textosPadrao,
+        infoRelatorioGeral,
+      ] = await Cancelable.all([
         XHR(urlCadastro)
           .then(parsePaginaCadastroMeusLocalizadores)
           .then(resultado => {
@@ -57,6 +62,10 @@ export const Botao = ({
             logger.log(resultado);
             return resultado;
           }),
+        obterPaginaRelatorioGeral(urlRelatorioGeral).then(resultado => {
+          render(Aguarde({ relatorioGeral: true }), container);
+          return resultado;
+        }),
       ]);
       const idsOrgao = new Map(orgao.map(loc => [loc.id, loc]));
       const { left: desativados, right: localizadores } = partitionMap(meus, ({ id, siglaNome }) =>
@@ -69,18 +78,14 @@ export const Botao = ({
         ? localizadores.filter(({ quantidadeProcessos }) => quantidadeProcessos > 0)
         : localizadores;
       container.textContent = '';
-      await obterPaginaRelatorioGeral(urlRelatorioGeral)
-        .then(resultado => {
-          render(Aguarde({ relatorioGeral: true }), container);
-          return resultado;
-        })
-        .chain(({ data, url }) =>
-          Cancelable.all(
-            localizadores.map(({ id }) => obterPaginaRelatorioGeralLocalizador(id)({ data, url }))
+      render(TabelaLocalizadores(dados), areaTabela);
+      await Cancelable.all(
+        localizadores.map(({ id }) =>
+          obterPaginaRelatorioGeralLocalizador(id)(infoRelatorioGeral).then(
+            parsePaginaRelatorioGeralLocalizador
           )
         )
-        .then(docs => Promise.all(docs.map(parsePaginaRelatorioGeralLocalizador)));
-      render(TabelaLocalizadores(dados), areaTabela);
+      );
     } catch (e) {
       logger.error(e);
       render(MensagemErro(e instanceof Error ? e.message : String(e)), container);
@@ -114,6 +119,7 @@ function obterPaginaRelatorioGeralLocalizador(id: string) {
   return function({ data: cleanData, url }: { data: FormData; url: string }) {
     const data = cloneFormData(cleanData);
     data.set('selLocalizadorPrincipalSelecionados', id);
+    data.set('paginacao', '10');
     return XHR(url, 'POST', data);
   };
 }

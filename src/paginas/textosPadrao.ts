@@ -7,9 +7,10 @@ import { textoCelulaObrigatorio } from '../textoCelulaObrigatorio';
 import { TextoPadrao } from '../TextoPadrao';
 
 export async function textosPadrao() {
-  if (document.location.hash !== '#limpar') throw new Error('Esperada hash #limpar.');
   const top = window.top;
-  if (top === window) throw new Error('Não é iframe.');
+  if (top === window) return;
+  if (document.location.hash !== '#limpar') return;
+
   await fromEvento(window as any, 'load');
   const limpar = await query<HTMLButtonElement>('button#btnLimpar');
   limpar.click();

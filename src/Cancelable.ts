@@ -26,6 +26,9 @@ export class Cancelable<a> {
     return new Cancelable(this._promise.then(f, g), this._token);
   }
 
+  static all<a, b, c, d>(
+    xs: [Cancelable<a>, Cancelable<b>, Cancelable<c>, Cancelable<d>]
+  ): Cancelable<[a, b, c, d]>;
   static all<a, b, c>(xs: [Cancelable<a>, Cancelable<b>, Cancelable<c>]): Cancelable<[a, b, c]>;
   static all<a, b>(xs: [Cancelable<a>, Cancelable<b>]): Cancelable<[a, b]>;
   static all<a>(xs: Cancelable<a>[]): Cancelable<a[]>;
