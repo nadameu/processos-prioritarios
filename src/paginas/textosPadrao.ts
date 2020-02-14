@@ -6,9 +6,7 @@ import { query } from '../query';
 import { textoCelulaObrigatorio } from '../textoCelulaObrigatorio';
 import { TextoPadrao } from '../TextoPadrao';
 
-export async function textosPadrao() {
-  const top = window.top;
-  if (top === window) return;
+export async function textosPadraoIframe() {
   if (document.location.hash !== '#limpar') return;
 
   await fromEvento(window as any, 'load');

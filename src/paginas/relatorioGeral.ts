@@ -2,9 +2,7 @@ import { query } from '../query';
 import { waitUntil } from '../waitUntil';
 import { XHR } from '../XHR';
 
-export async function relatorioGeral() {
-  const top = window.top;
-  if (top === window) return;
+export async function relatorioGeralIframe() {
   if (document.location.hash !== '#limpar') return;
   const sel = await query<HTMLSelectElement>('select.multipleSelect');
   await new Promise<void>(res => {

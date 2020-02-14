@@ -1,26 +1,53 @@
 import { meusLocalizadores } from './paginas/meusLocalizadores';
-import { relatorioGeral } from './paginas/relatorioGeral';
-import { textosPadrao } from './paginas/textosPadrao';
+import { relatorioGeralIframe } from './paginas/relatorioGeral';
+import { textosPadraoIframe } from './paginas/textosPadrao';
 
 export async function main() {
   const url = new URL(document.location.href);
   const params = url.searchParams;
-  switch (params.get('acao')) {
-    case 'localizador_orgao_listar':
-    case 'localizador_processos_lista':
-      return;
+  const acao = params.get('acao');
+  if (window.top !== window) {
+    // Iframe
+    switch (acao) {
+      case 'relatorio_geral_listar':
+        return relatorioGeralIframe();
 
-    case 'relatorio_geral_listar':
-      return relatorioGeral();
+      case 'texto_padrao_listar':
+        return textosPadraoIframe();
 
-    case 'texto_padrao_listar':
-      return textosPadrao();
+      default:
+        break;
+    }
+  } else {
+    // Página normal
+    switch (acao) {
+      case 'localizador_orgao_listar':
+        // Não implementado
+        return;
 
-    case 'usuario_tipo_monitoramento_localizador_listar':
-      return meusLocalizadores();
+      case 'localizador_processos_lista':
+        // Não implementado
+        return;
+
+      case 'relatorio_geral_listar':
+        // Somente iframe
+        return;
+
+      case 'texto_padrao_listar':
+        // Somente iframe
+        return;
+
+      case 'usuario_tipo_monitoramento_localizador_listar':
+        return meusLocalizadores();
+
+      default:
+        if (params.get('acao_origem') === 'principal') {
+          // Não implementado
+          return;
+        } else {
+          break;
+        }
+    }
+    throw new Error(`Ação desconhecida: ${acao}.`);
   }
-  if (params.get('acao_origem') === 'principal') {
-    return;
-  }
-  throw new Error(`Ação desconhecida.`);
 }
