@@ -6,9 +6,7 @@ import './meusLocalizadores.scss';
 
 export async function meusLocalizadores() {
   const [formulario, areaTabela, botaoCadastro, menu] = await Promise.all(
-    ['#frmLocalizadorLista', '#divInfraAreaTabela', '#btnNova', '[id="main-menu"]'].map(sel =>
-      query(sel)
-    )
+    ['frmLocalizadorLista', 'divInfraAreaTabela', 'btnNova', 'main-menu'].map(id => query(`#${id}`))
   );
   const [
     urlCadastro,
@@ -58,7 +56,7 @@ function obterUrlRelatorioGeral(menu: Element) {
 async function obterUrlMenu(menu: Element, acao: string): Promise<string> {
   const urls = queryAll<HTMLAnchorElement>('a[href]', menu)
     .map(link => link.href)
-    .filter(url => new RegExp(`\\?acao=${acao}&`).test(url));
+    .filter(url => new URL(url).searchParams.get('acao') === acao);
   if (urls.length !== 1) throw new Error(`Link para a ação \`${acao}\` não encontrado.`);
   return urls[0];
 }
