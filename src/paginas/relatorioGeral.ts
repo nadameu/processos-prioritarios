@@ -1,27 +1,33 @@
 import { query } from '../query';
-import { waitUntil } from '../waitUntil';
 import { XHR } from '../XHR';
 
 export async function relatorioGeralIframe() {
   if (document.location.hash !== '#limpar') return;
-  const sel = await query<HTMLSelectElement>('select.multipleSelect');
-  await new Promise<void>(res => {
-    const obs = new MutationObserver(() => {
-      obs.disconnect();
-      res();
-    });
-    obs.observe(sel, { attributeFilter: ['style'] });
+  const [_paginaCarregada, limpar] = await Promise.all([
+    query<HTMLSelectElement>('select.multipleSelect').then(aguardarOcultar),
+    query<HTMLButtonElement>('form button#btnLimparCookie'),
+  ]);
+  const dadosReset = await new Promise<FormData>(res => {
+    const form = limpar.form!;
+    form.submit = () => res(new FormData(form)); // Será disparado através do click no botão limpar
+    limpar.click();
   });
-  await waitUntil(() => sel.style.display === 'none');
-  const limpar = await query<HTMLButtonElement>('button#btnLimparCookie');
-  const form = await (limpar.form || Promise.reject(new Error('Formulário não encontrado.')));
-  form.submit = () => {
-    XHR(document.location.search, 'POST', new FormData(form)).then(async doc => {
-      const form = await query<HTMLFormElement>('form#frmProcessoLista', doc);
-      const data = new FormData(form);
-      const url = form.action;
-      top.postMessage({ data, url }, document.location.origin);
-    });
-  };
-  limpar.click();
+  const doc = await XHR(document.location.search, 'POST', dadosReset);
+  const form = await query<HTMLFormElement>('form#frmProcessoLista', doc);
+  window.top.postMessage({ data: new FormData(form), url: form.action }, document.location.origin);
+}
+
+function aguardarOcultar(elt: HTMLElement) {
+  return new Promise<void>(res => {
+    if (elt.style.display === 'none') res();
+    else {
+      const obs = new MutationObserver(() => {
+        if (elt.style.display === 'none') {
+          obs.disconnect();
+          res();
+        }
+      });
+      obs.observe(elt, { attributeFilter: ['style'] });
+    }
+  });
 }
