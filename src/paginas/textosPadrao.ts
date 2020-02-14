@@ -9,12 +9,13 @@ import { TextoPadrao } from '../TextoPadrao';
 export async function textosPadraoIframe() {
   if (document.location.hash !== '#limpar') return;
 
-  await fromEvento(window as any, 'load');
-  const limpar = await query<HTMLButtonElement>('button#btnLimpar');
+  const [_paginaCarregada, limpar, form] = await Promise.all([
+    fromEvento(window, 'load'),
+    query<HTMLButtonElement>('button#btnLimpar'),
+    query<HTMLFormElement>('form#frmTextoPadraoLista'),
+  ]);
   limpar.click();
-  const form = await query<HTMLFormElement>('form#frmTextoPadraoLista');
-  const data = new FormData(form);
-  top.postMessage(data, document.location.origin);
+  window.top.postMessage(new FormData(form), document.location.origin);
 }
 
 export async function parsePaginaTextosPadrao(doc: Document): Promise<TextoPadrao[]> {
