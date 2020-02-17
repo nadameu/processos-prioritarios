@@ -15,9 +15,9 @@ export async function meusLocalizadores() {
     urlRelatorioGeral,
   ] = await Promise.all([
     obterUrlCadastro(botaoCadastro),
-    obterUrlLocalizadoresOrgao(menu),
-    obterUrlTextosPadrao(menu),
-    obterUrlRelatorioGeral(menu),
+    ...['localizador_orgao_listar', 'texto_padrao_listar', 'relatorio_geral_listar'].map(
+      obterUrlMenu(menu)
+    ),
   ]);
   const container = document.createElement('div');
   formulario.insertAdjacentElement('beforebegin', container);
@@ -41,22 +41,13 @@ async function obterUrlCadastro(btn: Element): Promise<string> {
   );
 }
 
-async function obterUrlLocalizadoresOrgao(menu: Element) {
-  return obterUrlMenu(menu, 'localizador_orgao_listar');
-}
-
-function obterUrlTextosPadrao(menu: Element) {
-  return obterUrlMenu(menu, 'texto_padrao_listar');
-}
-
-function obterUrlRelatorioGeral(menu: Element) {
-  return obterUrlMenu(menu, 'relatorio_geral_listar');
-}
-
-async function obterUrlMenu(menu: Element, acao: string): Promise<string> {
+function obterUrlMenu(menu: Element): (acao: string) => Promise<string> {
   const urls = queryAll<HTMLAnchorElement>('a[href]', menu)
     .map(link => link.href)
-    .filter(url => new URL(url).searchParams.get('acao') === acao);
-  if (urls.length !== 1) throw new Error(`Link para a ação \`${acao}\` não encontrado.`);
-  return urls[0];
+    .map(url => ({ url, acao: new URL(url).searchParams.get('acao') }));
+  return async acao => {
+    const filtradas = urls.filter(url => url.acao === acao);
+    if (filtradas.length !== 1) throw new Error(`Link para a ação \`${acao}\` não encontrado.`);
+    return filtradas[0].url;
+  };
 }
