@@ -1,14 +1,16 @@
-type ResultadoTemporario<T, K extends Array<keyof T>> = {
-  [key in K[number]]: T[key] extends infer U | null | undefined ? U : never;
-} &
-  Omit<T, K[number]>;
-type Resultado<T, K extends Array<keyof T>> =
-  | { [key in keyof T]: ResultadoTemporario<T, K>[key] }
+type Resultado<T, K extends keyof T> =
+  | {
+      [key in keyof T]: key extends K
+        ? T[key] extends infer U | null | undefined
+          ? U
+          : never
+        : T[key];
+    }
   | null;
 
-export function camposObrigatorios<T, K extends Array<keyof T>>(
+export function camposObrigatorios<T, K extends keyof T>(
   obj: T,
-  keys: K = Object.keys(obj) as K
+  keys = Object.keys(obj) as K[]
 ): Resultado<T, K> {
   for (const key of keys) {
     if (obj[key] == null) return null;
