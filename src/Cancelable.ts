@@ -18,11 +18,11 @@ export class Cancelable<a> {
     this._token.cancel();
   }
 
-  catch<b = a>(f: (_: any) => b | PromiseLike<b>): Cancelable<a | b> {
+  catch<b = a>(f: (_: any) => Resolvable<b>): Cancelable<a | b> {
     return new Cancelable(this._promise.catch(f), this._token);
   }
 
-  then<b>(f: (_: a) => b | PromiseLike<b>, g?: (_: any) => b | PromiseLike<b>): Cancelable<b> {
+  then<b>(f: (_: a) => Resolvable<b>, g?: (_: any) => Resolvable<b>): Cancelable<b> {
     return new Cancelable(this._promise.then(f, g), this._token);
   }
 
