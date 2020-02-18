@@ -10,3 +10,8 @@ interface Promise<T> {
 interface PromiseConstructor {
   resolve<T>(value: Resolvable<T>): Promise<T>;
 }
+
+interface ObjectConstructor {
+  entries<T>(obj: T): [keyof T, T[keyof T]][];
+  values<T>(obj: T): T[keyof T][];
+}
