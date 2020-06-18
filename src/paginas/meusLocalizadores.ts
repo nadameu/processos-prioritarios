@@ -358,11 +358,32 @@ function obterFormularioVazio(key: string, url: string, fetch: () => Cancelable<
           typeof x === 'object' && x !== null && 'hash' in x && 'url' in x && 'data' in x
       )
       .filter(
-        (x): x is { hash: string; url: string; data: [string, string][] } =>
+        (
+          x
+        ): x is {
+          hash: string;
+          url: string;
+          data: { empty: unknown; other: unknown };
+        } =>
           typeof x.hash === 'string' &&
           typeof x.url === 'string' &&
-          Array.isArray(x.data) &&
-          x.data.every(
+          typeof x.data === 'object' &&
+          x.data !== null &&
+          'empty' in x.data &&
+          'other' in x.data
+      )
+      .filter(
+        (
+          x
+        ): x is {
+          hash: string;
+          url: string;
+          data: { empty: string[]; other: [string, string][] };
+        } =>
+          Array.isArray(x.data.empty) &&
+          Array.isArray(x.data.other) &&
+          x.data.empty.every(y => typeof y === 'string') &&
+          x.data.other.every(
             y =>
               Array.isArray(y) &&
               y.length === 2 &&
@@ -376,7 +397,10 @@ function obterFormularioVazio(key: string, url: string, fetch: () => Cancelable<
       throw new Error();
     }
     const data = new FormData();
-    for (const [key, value] of parsed.data) {
+    for (const key of parsed.data.empty) {
+      data.append(key, '');
+    }
+    for (const [key, value] of parsed.data.other) {
       data.append(key, value);
     }
     logger.log('Dados recuperados', { url, data });
@@ -385,9 +409,53 @@ function obterFormularioVazio(key: string, url: string, fetch: () => Cancelable<
     );
   } catch (_) {
     return fetch().then(fetched => {
-      const save = { hash: hash!, url: fetched.url, data: [] as [string, string][] };
+      const save = {
+        hash: hash!,
+        url: fetched.url,
+        data: { empty: [] as string[], other: [] as [string, string][] },
+      };
       for (const [key, value] of fetched.data) {
-        if (typeof value === 'string') save.data.push([key, value]);
+        if (typeof value === 'string')
+          if (value === '') save.data.empty.push(key);
+          else save.data.other.push([key, value]);
+      }
+      const size = save.data.empty.reduce((acc, x) => acc + x.length + 1, 0);
+      const view = new Uint8Array(size);
+      let i = 0;
+      for (const field of save.data.empty) {
+        for (const letter of field.split('')) {
+          view[i++] = letter.charCodeAt(0);
+        }
+        view[i++] = 0;
+      }
+      logger.debug(view);
+      logger.debug(btoa(save.data.empty.join(String.fromCharCode(0))));
+      const string = save.data.empty.join('&');
+      const map = new Map<string, number>([['&', 0]]);
+      const array: number[] = Array(string.length);
+      let max = 0;
+      string.split('').forEach((letter, index) => {
+        if (!map.has(letter)) {
+          map.set(letter, ++max);
+        }
+        const sym = map.get(letter)!;
+        array[index] = sym;
+      });
+      const bits = Math.ceil(Math.log2(map.size));
+      const length = Math.ceil(string.length * bits);
+      const buffer = new Uint8Array(length);
+      let index = 0;
+      let subindex = 0;
+      let current = 0;
+      for (const entry of array) {
+        current = (current << bits) | entry;
+        subindex += bits;
+        if (subindex >= 8) {
+          const value = current >> (subindex - 8);
+          buffer[index++] = value;
+          subindex -= 8;
+          current = ((current << (8 - subindex)) & 0xff) >> (8 - subindex);
+        }
       }
       sessionStorage.setItem(key, JSON.stringify(save));
       logger.log('Dados salvos', save);
