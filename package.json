@@ -37,7 +37,7 @@
 		"css-loader": "^3",
 		"detect-node": "^2.0.3",
 		"jest": "^24",
-		"node-sass": "^4.8.3",
+		"node-sass": "^4.13.1",
 		"raw-loader": "^3",
 		"sass-loader": "^7",
 		"style-loader": "^0.23",
