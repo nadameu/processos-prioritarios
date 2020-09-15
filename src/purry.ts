@@ -6,6 +6,7 @@ type Purried<args, ret> = args extends [infer a, infer b]
   : { (...args: any[]): never };
 
 export function purry<args extends unknown[], ret>(f: (...args: args) => ret): Purried<args, ret>;
+// eslint-disable-next-line @typescript-eslint/ban-types
 export function purry(f: Function) {
   return function purry(...args: any[]) {
     return f.length - args.length === 1
