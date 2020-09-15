@@ -15,11 +15,7 @@ export const LinhaLocalizador = (
       <td>
         ${LinkLocalizador(url, siglaNomeToTexto(siglaNome))}
         <br />
-        ${descricao
-          ? html`
-              <small>${descricao}</small>
-            `
-          : nothing}
+        ${descricao ? html`<small>${descricao}</small>` : nothing}
       </td>
       <td>
         ${lembrete
