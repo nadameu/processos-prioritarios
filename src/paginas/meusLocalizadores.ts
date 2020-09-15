@@ -245,7 +245,7 @@ async function buscarElementos(dispatch: Dispatch<Msg>) {
 }
 
 function buscarFormulariosVazios(model: ModelElementos) {
-  return async function(dispatch: Dispatch<Msg>) {
+  return async function (dispatch: Dispatch<Msg>) {
     try {
       await Cancelable.all([
         new Cancelable(
