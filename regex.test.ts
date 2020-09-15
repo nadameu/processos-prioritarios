@@ -40,6 +40,6 @@ test('regex', () => {
     '&'
   );
   expect(re).toEqual(
-    /^https:\/\/(eproc\.jf(pr|rs|sc)\.jus\.br\/eprocV2|eproc\.trf4\.jus\.br\/eproc2trf4|homologa-sc\.trf4\.jus\.br\/homologa_1g)\/controlador\.php\?acao=(usuario_tipo_monitoramento_localizador_listar|localizador_processos_lista|localizador_orgao_listar|relatorio_geral_listar|[^&]+&acao_origem=principal)&/
+    /^https:\/\/(eproc\.jf(pr|rs|sc)\.jus\.br\/eprocV2|eproc\.trf4\.jus\.br\/eproc2trf4|homologa\x2dsc\.trf4\.jus\.br\/homologa_1g)\/controlador\.php\?acao=(usuario_tipo_monitoramento_localizador_listar|localizador_processos_lista|localizador_orgao_listar|relatorio_geral_listar|[^&]+&acao_origem=principal)&/
   );
 });
