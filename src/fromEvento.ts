@@ -1,3 +1,9 @@
+/**
+ * Exemplo:
+ * ```
+ * await fromEvento(window, 'load');
+ * ```
+ */
 export function fromEvento<T extends HTMLElement, K extends keyof HTMLElementEventMap>(
   target: T,
   type: K
