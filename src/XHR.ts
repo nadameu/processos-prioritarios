@@ -1,10 +1,6 @@
 import { Cancelable } from './Cancelable';
 
-export function XHR(
-  url: string,
-  method = 'GET',
-  data: Parameters<XMLHttpRequest['send']>[0] = null
-) {
+export function XHR(url: string, method = 'GET', data: Document | BodyInit | null = null) {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   const token = { cancel() {} };
   const promise = new Promise<Document>((resolve, reject) => {
