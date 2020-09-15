@@ -1,2 +1,1 @@
-import * as logger from './functions';
-export { logger };
+export * as logger from './functions';
