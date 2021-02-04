@@ -2,8 +2,11 @@ import { html, render } from 'lit-html';
 import { Cancelable } from '../Cancelable';
 import { Logo } from '../componentes/Logo';
 import { MensagemErro } from '../componentes/MensagemErro';
+import { TabelaLocalizadores } from '../componentes/TabelaLocalizadores';
 import { Cmd, core, Dispatch } from '../core';
+import { note } from '../Either';
 import { logger } from '../logger';
+import { partitionMap } from '../partitionMap';
 import { query } from '../query';
 import { queryAll } from '../queryAll';
 import { XHR } from '../XHR';
@@ -247,7 +250,12 @@ async function buscarElementos(dispatch: Dispatch<Msg>) {
 function buscarFormulariosVazios(model: ModelElementos) {
   return async function (dispatch: Dispatch<Msg>) {
     try {
-      await Cancelable.all([
+      const [
+        { localizadores: meus, ocultarVazios },
+        orgao,
+        textosPadrao,
+        infoRelatorioGeral,
+      ] = await Cancelable.all([
         new Cancelable(
           Promise.resolve<UrlData>({ url: model.urlCadastro, data: new FormData() })
         )
@@ -280,58 +288,29 @@ function buscarFormulariosVazios(model: ModelElementos) {
           .then(parsePaginaTextosPadrao)
           .then(dados => (dispatch(Msg.DADOS_CARREGADOS('textosPadrao', dados)), dados)),
         obterFormularioVazioRelatorioGeral(model.urlRelatorioGeral)
-          .then(
-            info => (
-              dispatch(Msg.CARREGADO_FORMULARIO_VAZIO('relatorioGeral', info)),
-              XHR(info.url, 'POST', info.data)
-            )
-          )
-          .then(parsePaginaRelatorioGeralLocalizador)
+          // .then(
+          //   info => (
+          //     dispatch(Msg.CARREGADO_FORMULARIO_VAZIO('relatorioGeral', info)),
+          //     XHR(info.url, 'POST', info.data)
+          //   )
+          // )
+          // .then(parsePaginaRelatorioGeralLocalizador)
           .then(dados => (dispatch(Msg.DADOS_CARREGADOS('relatorioGeral', dados)), dados)),
       ]);
-      //   const { urlCadastro, urlLocalizadoresOrgao, urlTextosPadrao, urlRelatorioGeral } = model;
-      // const [
-      //   { ocultarVazios, localizadores: meus },
-      //   orgao,
-      //   textosPadrao,
-      //   infoRelatorioGeral,
-      // ] = await Cancelable.all([
-      //   XHR(urlCadastro)
-      //     .then(parsePaginaCadastroMeusLocalizadores)
-      //     .then(resultado => {
-      //       render(Aguarde({ localizadoresCadastro: true }), model.container);
-      //       return resultado;
-      //     }),
-      //   obterFormularioVazioLocalizadoresOrgao(urlLocalizadoresOrgao)
-      //     .then(parsePaginaLocalizadoresOrgao)
-      //     .then(resultado => {
-      //       render(Aguarde({ localizadoresOrgao: true }), model.container);
-      //       return resultado;
-      //     }),
-      //   obterFormularioVazioTextosPadrao(urlTextosPadrao)
-      //     .then(parsePaginaTextosPadrao)
-      //     .then(resultado => {
-      //       render(Aguarde({ textosPadrao: true }), model.container);
-      //       return resultado;
-      //     }),
-      //   obterFormularioVazioRelatorioGeral(urlRelatorioGeral).then(resultado => {
-      //     render(Aguarde({ relatorioGeral: true }), model.container);
-      //     return resultado;
-      //   }),
-      // ]);
-      // logger.log('Textos padrão', textosPadrao);
-      // const idsOrgao = new Map(orgao.map(loc => [loc.id, loc]));
-      // const { left: desativados, right: localizadores } = partitionMap(meus, ({ id, siglaNome }) =>
-      //   note(siglaNome, idsOrgao.get(id))
-      // );
-      // if (desativados.length > 0) {
-      //   throw new Error(`Os seguintes localizadores foram desativados: ${desativados.join(', ')}`);
-      // }
-      // const dados = ocultarVazios
-      //   ? localizadores.filter(({ quantidadeProcessos }) => quantidadeProcessos > 0)
-      //   : localizadores;
-      // model.container.textContent = '';
-      // render(TabelaLocalizadores(dados, infoRelatorioGeral), model.areaTabela);
+
+      logger.log('Textos padrão', textosPadrao);
+      const idsOrgao = new Map(orgao.map(loc => [loc.id, loc]));
+      const { left: desativados, right: localizadores } = partitionMap(meus, ({ id, siglaNome }) =>
+        note(siglaNome, idsOrgao.get(id))
+      );
+      if (desativados.length > 0) {
+        throw new Error(`Os seguintes localizadores foram desativados: ${desativados.join(', ')}`);
+      }
+      const dados = ocultarVazios
+        ? localizadores.filter(({ quantidadeProcessos }) => quantidadeProcessos > 0)
+        : localizadores;
+      model.container.textContent = '';
+      render(TabelaLocalizadores(dados, infoRelatorioGeral), model.areaTabela);
     } catch (e) {
       logger.error(e);
       dispatch(Msg.ERRO('Não foi possível obter os formulários necessários.'));
