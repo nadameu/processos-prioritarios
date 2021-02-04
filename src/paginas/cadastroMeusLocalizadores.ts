@@ -1,9 +1,8 @@
 import { camposObrigatorios } from '../camposObrigatorios';
-import { note } from '../Either';
 import { MeuLocalizador } from '../Localizador';
-import { partitionMap } from '../partitionMap';
 import { query } from '../query';
 import { textoCelulaObrigatorio } from '../textoCelulaObrigatorio';
+import { todosNaoNulos } from '../todosNaoNulos';
 
 interface DadosCadastro {
   ocultarVazios: boolean;
@@ -17,11 +16,7 @@ export async function parsePaginaCadastroMeusLocalizadores(doc: Document): Promi
   ]);
   const linhas = tabela.querySelectorAll<HTMLTableRowElement>('tr[class^="infraTr"]');
   const ocultarVazios = cbox.checked;
-  const { left, right: localizadores } = partitionMap(
-    Array.from(linhas, meuLocalizadorFromLinha),
-    (x, i) => note(i, x)
-  );
-  if (left.length > 0) throw new Error(`Erro nos índices ${left.join(', ')}.`);
+  const localizadores = await todosNaoNulos(Array.from(linhas, meuLocalizadorFromLinha));
   return {
     ocultarVazios,
     localizadores,
