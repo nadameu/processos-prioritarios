@@ -21,7 +21,7 @@
     "@types/jest": "^26.0.13",
     "@typescript-eslint/eslint-plugin": "^4.1.1",
     "@typescript-eslint/parser": "^4.1.1",
-    "escape-string-regexp": "^4.0.0",
+    "descriptive-regexp": "^0.2.0",
     "eslint": "^7.9.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-config-standard-preact": "^1.1.6",

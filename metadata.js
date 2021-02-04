@@ -1,4 +1,4 @@
-import { concat, oneOf } from './regex';
+import { concat, oneOf } from 'descriptive-regexp';
 
 const include = concat(
   /^/,
@@ -8,9 +8,9 @@ const include = concat(
     'eproc.trf4.jus.br/eproc2trf4',
     ...(process.env.BUILD === 'development'
       ? [
-          concat('homologa-', oneOf('sc', '1g1'), '.trf4.jus.br/homologa_1g'),
-          'eproc-1g-develop.trf4.jus.br/eprocv2_pmj',
-        ]
+        concat('homologa-', oneOf('sc', '1g1'), '.trf4.jus.br/homologa_1g'),
+        'eproc-1g-develop.trf4.jus.br/eprocv2_pmj',
+      ]
       : [])
   ),
   '/controlador.php?acao=',
