@@ -1,7 +1,7 @@
 const caracteresIgnorados = /[./]/;
 
 export function nomeContemSigla(sigla: string, nome: string): boolean {
-  const [s, n] = [sigla, nome].map(x => x.toLowerCase());
+  const [s, n] = [sigla, nome].map(x => x.toLowerCase()) as [string, string];
   let indiceAtual = -1;
   for (const caractere of s.split('')) {
     if (!caracteresIgnorados.test(caractere)) {

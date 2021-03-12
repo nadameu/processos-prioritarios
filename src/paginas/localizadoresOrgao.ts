@@ -19,14 +19,14 @@ function localizadorOrgaoFromLinha(linha: HTMLTableRowElement): LocalizadorOrgao
   if (linha.cells.length !== 8) return null;
 
   const id = idFromTexto(
-    linha.cells[0].querySelector<HTMLInputElement>('input[type="checkbox"]')?.value.split('-')[0]
+    linha.cells[0]!.querySelector<HTMLInputElement>('input[type="checkbox"]')?.value.split('-')[0]
   );
   if (!id) return null;
 
   return camposObrigatorios(
     {
       id,
-      url: linha.cells[6].querySelector<HTMLAnchorElement>('a[href]')?.href,
+      url: linha.cells[6]!.querySelector<HTMLAnchorElement>('a[href]')?.href,
       siglaNome: camposObrigatorios(
         { sigla: textoCelulaObrigatorio(linha, 1), nome: textoCelulaObrigatorio(linha, 2) },
         ['sigla', 'nome']
@@ -34,11 +34,10 @@ function localizadorOrgaoFromLinha(linha: HTMLTableRowElement): LocalizadorOrgao
       descricao: textoCelulaObrigatorio(linha, 3) || undefined,
       sistema: sistemaFromTexto(textoCelulaObrigatorio(linha, 4)),
       lembrete:
-        linha.cells[7]
-          .querySelector(`.memoLocalizadorOrgao${id}`)
+        linha.cells[7]!.querySelector(`.memoLocalizadorOrgao${id}`)
           ?.getAttribute('onmouseover')
           ?.match(/^return infraTooltipMostrar\('Obs: (.+) \/ .+?','',400\);$/)?.[1] || undefined,
-      quantidadeProcessos: numeroInteiro(Number(linha.cells[6].textContent)),
+      quantidadeProcessos: numeroInteiro(Number(linha.cells[6]!.textContent)),
     },
     ['id', 'url', 'siglaNome', 'sistema', 'quantidadeProcessos']
   );

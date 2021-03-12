@@ -61,7 +61,7 @@ function aux<a>(xs: Cancelable<a>[]) {
   return { cancel, settled };
 
   function cancel() {
-    for (const index of pending) xs[index].cancel();
+    for (const index of pending) xs[index]!.cancel();
   }
 
   function settled(index: number) {

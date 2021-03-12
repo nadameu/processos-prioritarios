@@ -219,7 +219,11 @@ async function criarContainer(dispatch: Dispatch<Msg>) {
 async function buscarElementos(dispatch: Dispatch<Msg>) {
   try {
     const [areaTabela, botaoCadastro, menu] = await Promise.all(
-      ['divInfraAreaTabela', 'btnNova', 'main-menu'].map(id => query(`#${id}`))
+      ['divInfraAreaTabela', 'btnNova', 'main-menu'].map(id => query(`#${id}`)) as [
+        Promise<Element>,
+        Promise<Element>,
+        Promise<Element>
+      ]
     );
     const [
       urlCadastro,
@@ -228,9 +232,9 @@ async function buscarElementos(dispatch: Dispatch<Msg>) {
       urlRelatorioGeral,
     ] = await Promise.all([
       obterUrlCadastro(botaoCadastro),
-      ...['localizador_orgao_listar', 'texto_padrao_listar', 'relatorio_geral_listar'].map(
+      ...(['localizador_orgao_listar', 'texto_padrao_listar', 'relatorio_geral_listar'].map(
         obterUrlMenu(menu)
-      ),
+      ) as [Promise<string>, Promise<string>, Promise<string>]),
     ]);
     dispatch(
       Msg.ELEMENTOS({
@@ -499,6 +503,6 @@ function obterUrlMenu(menu: Element): (acao: string) => Promise<string> {
   return async acao => {
     const filtradas = urls.filter(url => url.acao === acao);
     if (filtradas.length !== 1) throw new Error(`Link para a ação \`${acao}\` não encontrado.`);
-    return filtradas[0].url;
+    return filtradas[0]!.url;
   };
 }

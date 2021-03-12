@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/camelcase */
 
 import path from 'path';
-import resolve from 'rollup-plugin-node-resolve';
+import resolve from '@rollup/plugin-node-resolve';
 import postcss from 'rollup-plugin-postcss';
 import prettier from 'rollup-plugin-prettier';
 import serve from 'rollup-plugin-serve';
 import { string } from 'rollup-plugin-string';
 import { terser } from 'rollup-plugin-terser';
-import typescript from 'rollup-plugin-typescript';
+import typescript from '@rollup/plugin-typescript';
 import { generateBanner } from './generateBanner.js';
 import pkg from './package.json';
 
@@ -33,7 +33,7 @@ const config = {
   },
 
   plugins: [
-    typescript(),
+    typescript({ module: 'esnext' }),
     resolve(),
     string({ include: '*.svg' }),
     postcss(),

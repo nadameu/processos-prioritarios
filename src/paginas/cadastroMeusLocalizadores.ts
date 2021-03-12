@@ -27,8 +27,8 @@ function meuLocalizadorFromLinha(linha: HTMLTableRowElement): MeuLocalizador | n
   if (linha.cells.length !== 4) return null;
 
   return camposObrigatorios({
-    id: linha.cells[0].querySelector('div:nth-child(2)')?.textContent?.match(/^.(\d{30})$/)?.[1],
-    siglaNome: linha.cells[0].querySelector('div:nth-child(1)')?.textContent || null,
+    id: linha.cells[0]?.querySelector('div:nth-child(2)')?.textContent?.match(/^.(\d{30})$/)?.[1],
+    siglaNome: linha.cells[0]?.querySelector('div:nth-child(1)')?.textContent || null,
     quantidadeProcessos: (x => (Number.isInteger(x) ? x : null))(
       Number(textoCelulaObrigatorio(linha, 1))
     ),

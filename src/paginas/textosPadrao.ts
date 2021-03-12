@@ -35,7 +35,7 @@ function textoPadraoFromLinha(linha: HTMLTableRowElement): TextoPadrao | null {
   return camposObrigatorios(
     {
       codigo: textoCelulaObrigatorio(linha, 2),
-      url: linha.cells[2].querySelector<HTMLAnchorElement>('a[href]')?.href || null,
+      url: linha.cells[2]?.querySelector<HTMLAnchorElement>('a[href]')?.href || null,
       descricao: textoCelulaObrigatorio(linha, 3),
       sigla: textoCelulaObrigatorio(linha, 4) || undefined,
     },
