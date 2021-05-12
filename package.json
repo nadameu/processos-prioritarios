@@ -23,7 +23,7 @@
     "descriptive-regexp": "^0.2.0",
     "idb": "^6.0.0",
     "lit-html": "^1.3.0",
-    "postcss": "^8.2.8",
+    "postcss": "^8.2.10",
     "preact": "^10.5.12",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
