@@ -1,0 +1,27 @@
+{
+	"name": "processos-prioritarios",
+	"version": "1.0.0",
+	"private": true,
+	"description": "Processos prioritários",
+	"homepage": "https://github.com/nadameu/processos-prioritarios#readme",
+	"bugs": {
+		"url": "https://github.com/nadameu/processos-prioritarios/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/nadameu/processos-prioritarios.git"
+	},
+	"license": "MIT",
+	"author": "nadameu",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"build": "node ./esbuild/build",
+		"start": "node ./esbuild/serve"
+	},
+	"devDependencies": {
+		"@types/node": "^16.6.2",
+		"esbuild": "^0.12.20",
+		"ts-node": "^10.2.1",
+		"typescript": "^4.3.5"
+	}
+}
