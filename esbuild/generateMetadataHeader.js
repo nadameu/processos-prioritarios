@@ -21,5 +21,5 @@ module.exports = function generateMetadataHeader(obj) {
 	const keyLength = pairs.reduce((curr, { key: { length } }) => (length > curr ? length : curr), 0);
 
 	const lines = pairs.map(({ key, value }) => `// @${key.padEnd(keyLength, ' ')}  ${value}`);
-	return `// ==UserScript==\n${lines.join('\n')}\n// ==/UserScript==`;
+	return `// ==UserScript==\n${lines.join('\n')}\n// ==/UserScript==\n`;
 };
