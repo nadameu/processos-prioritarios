@@ -11,8 +11,11 @@ const banner = generateMetadataHeader({
 
 const filename = (exports.filename = `${pkg.name}.user.js`);
 
+/** @type {import('esbuild').BuildOptions} */
 exports.settings = {
-	entryPoints: ['src/index.ts'],
 	banner: { js: banner },
+	bundle: true,
+	entryPoints: ['src/index.ts'],
+	format: 'esm',
 	outfile: `./dist/${filename}`,
 };
